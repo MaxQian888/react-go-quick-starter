@@ -32,16 +32,21 @@ jobs:
     name: Test Suite
     uses: ./.github/workflows/test.yml
 
+  # Run Go CI (includes integration tests via workflow_call)
+  go-ci:
+    name: Go CI
+    uses: ./.github/workflows/go-ci.yml
+
   # Build Tauri apps for all platforms
   build-tauri:
     name: Build Tauri
-    needs: [quality, test]
+    needs: [quality, test, go-ci]
     uses: ./.github/workflows/build-tauri.yml
 
   # Create the GitHub release
   create-release:
     name: Create Release
-    needs: [quality, test, build-tauri]
+    needs: [quality, test, go-ci, build-tauri]
     runs-on: ubuntu-latest
 
     permissions:
