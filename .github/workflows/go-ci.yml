@@ -57,7 +57,7 @@ jobs:
           args: --timeout=5m
 
       - name: Run unit tests
-        run: go test ./... -count=1 -race
+        run: go test ./... -count=1 -race -timeout 120s
 
   go-integration:
     name: Go Integration Tests
