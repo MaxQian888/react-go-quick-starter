@@ -29,17 +29,19 @@ The existing CI pipeline (`ci.yml`) only covers the frontend (Next.js). The Go b
 
 ### New file: `.github/workflows/go-ci.yml`
 
+Top-level triggers: `on: push` (branches: master, develop), `on: pull_request` (branches: master, develop), and `on: workflow_call` (required for `ci.yml` and `release.yml` to call this workflow via `uses:`).
+
 Two jobs:
 
 **`go-unit`** — runs on every PR and push:
-- `actions/setup-go@v5` with Go version from `src-go/go.mod`
-- Cache Go modules (`~/.cache/go`)
+- `actions/setup-go@v5` with `go-version-file: src-go/go.mod` and `cache: true` (automatically caches both the module cache `~/go/pkg/mod` and the build cache)
 - `go vet ./...`
-- `golangci-lint` via `golangci-lint-action@v6` (linters: `staticcheck`, `errcheck`, `gosimple`, `unused`, `govet`)
+- `golangci-lint` via `golangci-lint-action@v6` (linters: `staticcheck`, `errcheck`, `govet` — note: `gosimple` and `unused` no longer exist as standalone linters in golangci-lint v2; they are absorbed into `staticcheck`)
 - `go test ./... -count=1` (unit tests only; integration tests are excluded by build tag)
 
-**`go-integration`** — runs only on push to `master` or PR targeting `master`:
-- Same Go setup + module cache
+**`go-integration`** — runs only on push to `master`, PR targeting `master`, or when called via `workflow_call` (so release.yml gets integration coverage on tag pushes):
+- Condition: `github.ref == 'refs/heads/master' || github.base_ref == 'master' || github.event_name == 'workflow_call'`
+- Same Go setup with `cache: true`
 - `services:` block with `postgres:16-alpine` and `redis:7-alpine`, matching `docker-compose.yml`
 - Health-check wait before tests run
 - `go test ./... -tags integration -count=1 -v`
@@ -57,8 +59,8 @@ needs: [quality, test, go-ci]
 
 Before the `Build Tauri app` step, add:
 
-1. **Setup Go** — `actions/setup-go@v5`, version read from `src-go/go.mod`
-2. **Build Go sidecar** — `bash scripts/build-backend.sh --current-only`
+1. **Setup Go** — `actions/setup-go@v5` with `go-version-file: src-go/go.mod` and `cache: true`
+2. **Build Go sidecar** — `bash scripts/build-backend.sh --current-only` with `shell: bash` explicitly set (required for the Windows runner in the matrix, which defaults to PowerShell)
 
 This ensures the platform-specific binary exists in `src-tauri/binaries/` before `pnpm tauri build` runs.
 
@@ -76,7 +78,7 @@ Add `go-ci` job (reusing `go-ci.yml` via `workflow_call`) in parallel with `qual
   Tests: config loads defaults, env vars override defaults, production mode requires JWT_SECRET.
 
 - `src-go/internal/handler/health_test.go`
-  Tests: `GET /health` returns 200 with `{"status":"ok"}`, using a mock Echo context.
+  Tests: `GET /health` returns 200 and body contains `"status":"ok"` using a mock Echo context. The actual response also includes a `time` field, so the test asserts field presence rather than exact body equality.
 
 ### Integration tests (`//go:build integration`)
 
@@ -95,12 +97,14 @@ Integration tests skip themselves (via `t.Skip`) if `TEST_POSTGRES_URL` is empty
 ```
 Push / PR
     │
-    ├── quality (ESLint, TS check)  ─────────┐
-    ├── test (Jest, Next.js build)  ─────────┤──► build-tauri
-    └── go-ci                                │     (Go binary built first)
-            ├── go-unit (always)    ─────────┘
-            └── go-integration (master only)
+    ├── quality (ESLint, TS check)    ──────────────────┐
+    ├── test (Jest, Next.js build)    ──────────────────┤──► build-tauri
+    └── go-ci (called workflow)       ──────────────────┘     (Go binary built first)
+            ├── go-unit (always)
+            └── go-integration (master / workflow_call)
 ```
+
+`build-tauri` depends on the entire `go-ci` called workflow. Both jobs must reach terminal state (pass or skip) before `build-tauri` starts. On non-master branches `go-integration` reaches "skipped" status and unblocks immediately after `go-unit` passes.
 
 ---
 
@@ -109,6 +113,12 @@ Push / PR
 - `golangci-lint` failures block the PR merge.
 - Integration test failures on `master` block `build-tauri`.
 - If `TEST_POSTGRES_URL` is unset locally, integration tests self-skip with a clear message.
+
+---
+
+## Notes
+
+- `go.mod` declares `go 1.25.0`. `actions/setup-go@v5` uses `go-version-file: src-go/go.mod` to read this automatically. If Go 1.25.0 is not yet in the official downloads manifest at CI run time, the workflow will fall back to the latest stable release. This is acceptable for a starter template.
 
 ---
 
