@@ -91,6 +91,17 @@ jobs:
       - name: Install frontend dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Setup Go
+        uses: actions/setup-go@v5
+        with:
+          go-version-file: src-go/go.mod
+          cache: true
+          cache-dependency-path: src-go/go.sum
+
+      - name: Build Go sidecar
+        shell: bash
+        run: bash scripts/build-backend.sh --current-only
+
       # Note: Code signing is OPTIONAL and DISABLED by default.
       # Unsigned builds are suitable for testing and development.
       # For production releases with code signing, uncomment the env section below.
