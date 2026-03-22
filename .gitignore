@@ -47,3 +47,10 @@ next-env.d.ts
 #Windsurf
 .windsurfrules
 .ace-tool/
+
+# Go backend binaries (compiled artifacts)
+src-tauri/binaries/server*
+!src-tauri/binaries/.gitkeep
+
+# Go build cache
+src-go/.env

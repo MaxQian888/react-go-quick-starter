@@ -37,6 +37,37 @@ pnpm tauri info       # Check Tauri environment
 pnpm dlx shadcn@latest add <component-name>
 ```
 
+## Go Backend Commands
+
+```bash
+# Run backend directly (requires PostgreSQL + Redis running)
+cd src-go && go run ./cmd/server
+
+# Build for current platform
+cd src-go && go build ./cmd/server
+
+# Run Go tests
+cd src-go && go test ./...
+
+# Compile Go sidecar for current platform only (fast, for local dev)
+pnpm build:backend:dev
+
+# Cross-compile Go sidecar for all platforms
+pnpm build:backend
+
+# Start Tauri desktop app with auto-compiled backend
+pnpm tauri:dev
+
+# Full production build: Go binary + Next.js export + Tauri installer
+pnpm tauri:build
+```
+
+### Backend Environment (src-go/.env)
+Copy `src-go/.env.example` to `src-go/.env` and configure:
+- `POSTGRES_URL` — PostgreSQL connection string
+- `REDIS_URL` — Redis connection string
+- `JWT_SECRET` — Must be set (min 32 chars recommended)
+
 ## Architecture
 
 ### Frontend Structure

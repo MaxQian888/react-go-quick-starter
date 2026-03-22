@@ -9,10 +9,15 @@
     "lint": "eslint",
     "test": "jest",
     "test:watch": "jest --watch",
-    "test:coverage": "jest --coverage"
+    "test:coverage": "jest --coverage",
+    "build:backend": "bash scripts/build-backend.sh",
+    "build:backend:dev": "bash scripts/build-backend.sh --current-only",
+    "tauri:dev": "pnpm build:backend:dev && pnpm tauri dev",
+    "tauri:build": "pnpm build:backend && pnpm build && pnpm tauri build"
   },
   "dependencies": {
     "@radix-ui/react-slot": "^1.2.4",
+    "@tauri-apps/api": "^2.10.1",
     "class-variance-authority": "^0.7.1",
     "clsx": "^2.1.1",
     "lucide-react": "^0.577.0",
