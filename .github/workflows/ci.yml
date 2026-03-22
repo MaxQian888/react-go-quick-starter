@@ -37,13 +37,18 @@ jobs:
     name: Quality
     uses: ./.github/workflows/quality.yml
 
-  # Step 2: Test Suite & Build
+  # Step 2: Frontend Test Suite & Build
   test:
     name: Test
     uses: ./.github/workflows/test.yml
 
-  # Step 3: Build Tauri Desktop Apps (after quality & test pass)
+  # Step 3: Go Backend CI (lint + unit + integration)
+  go-ci:
+    name: Go CI
+    uses: ./.github/workflows/go-ci.yml
+
+  # Step 4: Build Tauri Desktop Apps (after all checks pass)
   build-tauri:
     name: Build Tauri
-    needs: [quality, test]
+    needs: [quality, test, go-ci]
     uses: ./.github/workflows/build-tauri.yml
