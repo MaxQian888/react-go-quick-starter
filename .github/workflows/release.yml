@@ -17,6 +17,11 @@ on:
     tags:
       - "v*"
 
+permissions:
+  contents: write
+  pull-requests: write
+  checks: write
+
 concurrency:
   group: release-${{ github.ref }}
   cancel-in-progress: false
@@ -30,6 +35,10 @@ jobs:
   # Run tests
   test:
     name: Test Suite
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
     uses: ./.github/workflows/test.yml
 
   # Run Go CI (includes integration tests via workflow_call)

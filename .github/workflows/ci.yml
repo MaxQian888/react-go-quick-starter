@@ -27,6 +27,11 @@ on:
       - master
       - develop
 
+permissions:
+  contents: read
+  pull-requests: write
+  checks: write
+
 concurrency:
   group: ${{ github.workflow }}-${{ github.ref }}
   cancel-in-progress: true
@@ -40,6 +45,10 @@ jobs:
   # Step 2: Frontend Test Suite & Build
   test:
     name: Test
+    permissions:
+      contents: read
+      pull-requests: write
+      checks: write
     uses: ./.github/workflows/test.yml
 
   # Step 3: Go Backend CI (lint + unit + integration)
