@@ -3,7 +3,6 @@ package config_test
 
 import (
 	"os"
-	"path/filepath"
 	"testing"
 
 	"github.com/spf13/viper"
@@ -24,8 +23,6 @@ func resetViper(t *testing.T) {
 		viper.Reset()
 		_ = os.Chdir(orig)
 	})
-	// Ensure no stray .env is found in the temp dir.
-	_ = filepath.Join(tmp, ".env")
 }
 
 func TestLoad_Defaults(t *testing.T) {
