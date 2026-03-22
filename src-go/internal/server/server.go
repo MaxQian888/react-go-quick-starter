@@ -1,3 +1,4 @@
+// Package server configures the Echo HTTP server with middleware and settings.
 package server
 
 import (

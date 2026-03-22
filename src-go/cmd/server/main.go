@@ -27,7 +27,7 @@ func main() {
 
 	// Apply --port flag before loading config
 	if *portFlag != "" {
-		os.Setenv("PORT", *portFlag)
+		_ = os.Setenv("PORT", *portFlag)
 	}
 
 	cfg := config.Load()
