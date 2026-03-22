@@ -52,7 +52,7 @@ jobs:
       - name: Run golangci-lint
         uses: golangci/golangci-lint-action@v6
         with:
-          version: latest
+          version: v2.0.2
           working-directory: src-go
           args: --timeout=5m
 
@@ -110,5 +110,5 @@ jobs:
       - name: Run integration tests
         run: go test ./... -tags integration -count=1 -v
         env:
-          TEST_POSTGRES_URL: postgres://dev:dev@localhost:5432/appdb_test
+          TEST_POSTGRES_URL: postgres://dev:dev@localhost:5432/appdb_test?sslmode=disable
           TEST_REDIS_URL: redis://localhost:6379
