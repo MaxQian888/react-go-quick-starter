@@ -45,7 +45,7 @@ func (h *WSHandler) HandleWS(c echo.Context) error {
 	}
 
 	websocket.Handler(func(ws *websocket.Conn) {
-		defer ws.Close()
+		defer ws.Close() //nolint:errcheck // best-effort close in deferred cleanup
 		for {
 			var msg string
 			if err := websocket.Message.Receive(ws, &msg); err != nil {

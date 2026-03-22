@@ -1,3 +1,4 @@
+// Package service implements business logic for authentication and user management.
 package service
 
 import (
@@ -15,7 +16,7 @@ import (
 	"golang.org/x/crypto/bcrypt"
 )
 
-// Custom JWT claims
+// Claims holds custom JWT claims for access and refresh tokens.
 type Claims struct {
 	UserID string `json:"sub"`
 	Email  string `json:"email"`

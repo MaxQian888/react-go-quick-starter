@@ -1,3 +1,4 @@
+// Package database provides connection helpers for PostgreSQL and Redis.
 package database
 
 import (

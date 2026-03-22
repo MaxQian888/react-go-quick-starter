@@ -1,3 +1,4 @@
+// Package model defines domain types and request/response DTOs.
 package model
 
 import (

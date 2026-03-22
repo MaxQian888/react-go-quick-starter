@@ -1,3 +1,4 @@
+// Package middleware provides Echo middleware for authentication and request processing.
 package middleware
 
 import (

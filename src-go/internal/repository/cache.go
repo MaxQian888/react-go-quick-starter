@@ -1,3 +1,4 @@
+// Package repository implements data access for PostgreSQL and Redis.
 package repository
 
 import (
