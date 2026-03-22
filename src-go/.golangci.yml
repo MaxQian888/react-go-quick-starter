@@ -8,11 +8,10 @@ linters:
     - govet
     - errcheck
     - staticcheck
-
-linters-settings:
-  staticcheck:
-    checks:
-      - all
+  settings:
+    staticcheck:
+      checks:
+        - all
 
 issues:
   max-same-issues: 0
