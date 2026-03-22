@@ -298,7 +298,7 @@ All jobs upload artifacts that are retained for 7-30 days:
 
 ### Tests Failing in CI but Passing Locally
 
-1. Check Node.js version matches (20.x)
+1. Check Node.js version matches (22.x)
 2. Ensure `pnpm-lock.yaml` is committed
 3. Check for environment-specific issues
 4. Review test logs in GitHub Actions
