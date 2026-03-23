@@ -7,23 +7,19 @@ import (
 	"context"
 	"fmt"
 	"os"
-	"path/filepath"
-	"runtime"
 	"testing"
 
 	"github.com/google/uuid"
 	"github.com/react-go-quick-starter/server/internal/model"
 	"github.com/react-go-quick-starter/server/internal/repository"
+	"github.com/react-go-quick-starter/server/migrations"
 	"github.com/react-go-quick-starter/server/pkg/database"
 )
 
 // TestMain runs migrations once before all tests in this package.
 func TestMain(m *testing.M) {
 	if url := os.Getenv("TEST_POSTGRES_URL"); url != "" {
-		_, filename, _, _ := runtime.Caller(0)
-		// src-go/internal/repository/ → src-go/migrations/
-		migrationsPath := filepath.Join(filepath.Dir(filename), "..", "..", "migrations")
-		if err := database.RunMigrations(url, migrationsPath); err != nil {
+		if err := database.RunMigrations(url, migrations.FS); err != nil {
 			fmt.Fprintf(os.Stderr, "migration error: %v\n", err)
 			os.Exit(1)
 		}

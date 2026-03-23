@@ -3,25 +3,32 @@ package database
 import (
 	"errors"
 	"fmt"
-	"log"
+	"io/fs"
+	"log/slog"
 
 	"github.com/golang-migrate/migrate/v4"
 	_ "github.com/golang-migrate/migrate/v4/database/postgres"
-	_ "github.com/golang-migrate/migrate/v4/source/file"
+	"github.com/golang-migrate/migrate/v4/source/iofs"
 )
 
-func RunMigrations(postgresURL, migrationsPath string) error {
-	m, err := migrate.New("file://"+migrationsPath, postgresURL)
+// RunMigrations runs all pending migrations from an embedded filesystem.
+func RunMigrations(postgresURL string, migrations fs.FS) error {
+	source, err := iofs.New(migrations, ".")
+	if err != nil {
+		return fmt.Errorf("create iofs source: %w", err)
+	}
+
+	m, err := migrate.NewWithSourceInstance("iofs", source, postgresURL)
 	if err != nil {
 		return fmt.Errorf("create migrator: %w", err)
 	}
 	defer func() {
 		srcErr, dbErr := m.Close()
 		if srcErr != nil {
-			log.Printf("close migration source: %v", srcErr)
+			slog.Warn("close migration source", "error", srcErr)
 		}
 		if dbErr != nil {
-			log.Printf("close migration db: %v", dbErr)
+			slog.Warn("close migration db", "error", dbErr)
 		}
 	}()
 
@@ -29,6 +36,6 @@ func RunMigrations(postgresURL, migrationsPath string) error {
 		return fmt.Errorf("run migrations: %w", err)
 	}
 
-	log.Println("Migrations applied successfully")
+	slog.Info("Migrations applied successfully")
 	return nil
 }

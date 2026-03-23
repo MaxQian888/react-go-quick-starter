@@ -12,9 +12,24 @@ import (
 	"github.com/jackc/pgx/v5"
 	"github.com/react-go-quick-starter/server/internal/config"
 	"github.com/react-go-quick-starter/server/internal/model"
-	"github.com/react-go-quick-starter/server/internal/repository"
 	"golang.org/x/crypto/bcrypt"
 )
+
+// UserRepository defines the interface for user persistence operations.
+type UserRepository interface {
+	Create(ctx context.Context, user *model.User) error
+	GetByEmail(ctx context.Context, email string) (*model.User, error)
+	GetByID(ctx context.Context, id uuid.UUID) (*model.User, error)
+}
+
+// CacheRepository defines the interface for token caching operations.
+type CacheRepository interface {
+	SetRefreshToken(ctx context.Context, userID, token string, ttl time.Duration) error
+	GetRefreshToken(ctx context.Context, userID string) (string, error)
+	DeleteRefreshToken(ctx context.Context, userID string) error
+	BlacklistToken(ctx context.Context, jti string, ttl time.Duration) error
+	IsBlacklisted(ctx context.Context, jti string) (bool, error)
+}
 
 // Claims holds custom JWT claims for access and refresh tokens.
 type Claims struct {
@@ -25,12 +40,12 @@ type Claims struct {
 }
 
 type AuthService struct {
-	userRepo  *repository.UserRepository
-	cacheRepo *repository.CacheRepository
+	userRepo  UserRepository
+	cacheRepo CacheRepository
 	cfg       *config.Config
 }
 
-func NewAuthService(userRepo *repository.UserRepository, cacheRepo *repository.CacheRepository, cfg *config.Config) *AuthService {
+func NewAuthService(userRepo UserRepository, cacheRepo CacheRepository, cfg *config.Config) *AuthService {
 	return &AuthService{userRepo: userRepo, cacheRepo: cacheRepo, cfg: cfg}
 }
 

@@ -4,12 +4,10 @@ import (
 	"context"
 	"flag"
 	"fmt"
-	"log"
+	"log/slog"
 	"net/http"
 	"os"
 	"os/signal"
-	"path/filepath"
-	"runtime"
 	"syscall"
 	"time"
 
@@ -17,6 +15,8 @@ import (
 	"github.com/react-go-quick-starter/server/internal/repository"
 	"github.com/react-go-quick-starter/server/internal/server"
 	"github.com/react-go-quick-starter/server/internal/service"
+	"github.com/react-go-quick-starter/server/internal/version"
+	"github.com/react-go-quick-starter/server/migrations"
 	"github.com/react-go-quick-starter/server/pkg/database"
 )
 
@@ -32,35 +32,51 @@ func main() {
 
 	cfg := config.Load()
 
+	// Set up structured logging
+	var logHandler slog.Handler
+	if cfg.Env == "production" {
+		logHandler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn})
+	} else {
+		logHandler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
+	}
+	slog.SetDefault(slog.New(logHandler))
+
+	slog.Info("starting server",
+		"version", version.Version,
+		"commit", version.Commit,
+		"buildDate", version.BuildDate,
+		"env", cfg.Env,
+	)
+
 	// Dev fallback: auto-generate a secret so the server starts without config.
 	// NEVER use this in production.
 	if cfg.JWTSecret == "" {
 		if cfg.Env == "production" {
-			log.Fatal("JWT_SECRET environment variable is required in production")
+			slog.Error("JWT_SECRET environment variable is required in production")
+			os.Exit(1)
 		}
 		cfg.JWTSecret = "dev-secret-change-me-in-production-32ch"
-		log.Println("WARNING: JWT_SECRET not set — using insecure dev default. Set JWT_SECRET for real usage.")
+		slog.Warn("JWT_SECRET not set — using insecure dev default")
 	}
 
 	// Connect to PostgreSQL (optional — server starts in degraded mode if unavailable)
 	db, err := database.NewPostgres(cfg.PostgresURL)
 	if err != nil {
-		log.Printf("Warning: PostgreSQL unavailable: %v (auth endpoints will not work)", err)
+		slog.Warn("PostgreSQL unavailable, auth endpoints will not work", "error", err)
 		db = nil
 	}
 
 	// Connect to Redis (optional)
 	rdb, err := database.NewRedis(cfg.RedisURL)
 	if err != nil {
-		log.Printf("Warning: Redis unavailable: %v (token cache disabled)", err)
+		slog.Warn("Redis unavailable, token cache disabled", "error", err)
 		rdb = nil
 	}
 
 	// Run database migrations if DB is available
 	if db != nil {
-		migrationsPath := migrationsDir()
-		if err := database.RunMigrations(cfg.PostgresURL, migrationsPath); err != nil {
-			log.Printf("Warning: migration error: %v", err)
+		if err := database.RunMigrations(cfg.PostgresURL, migrations.FS); err != nil {
+			slog.Warn("migration error", "error", err)
 		}
 	}
 
@@ -79,11 +95,11 @@ func main() {
 
 	go func() {
 		<-quit
-		log.Println("Shutting down server...")
+		slog.Info("shutting down server...")
 		ctx, cancel := context.WithTimeout(context.Background(), 10*time.Second)
 		defer cancel()
 		if err := e.Shutdown(ctx); err != nil {
-			e.Logger.Error(err)
+			slog.Error("server shutdown error", "error", err)
 		}
 		if db != nil {
 			db.Close()
@@ -94,25 +110,12 @@ func main() {
 	}()
 
 	addr := fmt.Sprintf(":%s", cfg.Port)
-	log.Printf("Starting server on %s (env=%s)", addr, cfg.Env)
+	slog.Info("server listening", "addr", addr)
 
 	if err := e.Start(addr); err != nil && err != http.ErrServerClosed {
-		e.Logger.Fatal(err)
+		slog.Error("server start failed", "error", err)
+		os.Exit(1)
 	}
 
-	log.Println("Server stopped")
-}
-
-// migrationsDir returns the path to the migrations directory.
-// Compiled binary: relative to executable. go run: relative to source file.
-func migrationsDir() string {
-	exe, err := os.Executable()
-	if err == nil {
-		candidate := filepath.Join(filepath.Dir(exe), "migrations")
-		if _, err := os.Stat(candidate); err == nil {
-			return candidate
-		}
-	}
-	_, filename, _, _ := runtime.Caller(0)
-	return filepath.Join(filepath.Dir(filename), "..", "..", "migrations")
+	slog.Info("server stopped")
 }

@@ -5,19 +5,29 @@ import (
 	"fmt"
 
 	"github.com/google/uuid"
-	"github.com/jackc/pgx/v5/pgxpool"
+	"github.com/jackc/pgx/v5"
+	"github.com/jackc/pgx/v5/pgconn"
 	"github.com/react-go-quick-starter/server/internal/model"
 )
 
-type UserRepository struct {
-	db *pgxpool.Pool
+// DBTX is the interface satisfied by *pgxpool.Pool, *pgx.Conn, and pgx.Tx.
+type DBTX interface {
+	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
+	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
 }
 
-func NewUserRepository(db *pgxpool.Pool) *UserRepository {
+type UserRepository struct {
+	db DBTX
+}
+
+func NewUserRepository(db DBTX) *UserRepository {
 	return &UserRepository{db: db}
 }
 
 func (r *UserRepository) Create(ctx context.Context, user *model.User) error {
+	if r.db == nil {
+		return ErrDatabaseUnavailable
+	}
 	query := `
 		INSERT INTO users (id, email, password, name, created_at, updated_at)
 		VALUES ($1, $2, $3, $4, NOW(), NOW())
@@ -30,6 +40,9 @@ func (r *UserRepository) Create(ctx context.Context, user *model.User) error {
 }
 
 func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.User, error) {
+	if r.db == nil {
+		return nil, ErrDatabaseUnavailable
+	}
 	query := `SELECT id, email, password, name, created_at, updated_at FROM users WHERE email = $1`
 	user := &model.User{}
 	err := r.db.QueryRow(ctx, query, email).Scan(
@@ -42,6 +55,9 @@ func (r *UserRepository) GetByEmail(ctx context.Context, email string) (*model.U
 }
 
 func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.User, error) {
+	if r.db == nil {
+		return nil, ErrDatabaseUnavailable
+	}
 	query := `SELECT id, email, password, name, created_at, updated_at FROM users WHERE id = $1`
 	user := &model.User{}
 	err := r.db.QueryRow(ctx, query, id).Scan(
@@ -54,6 +70,9 @@ func (r *UserRepository) GetByID(ctx context.Context, id uuid.UUID) (*model.User
 }
 
 func (r *UserRepository) UpdateName(ctx context.Context, id uuid.UUID, name string) error {
+	if r.db == nil {
+		return ErrDatabaseUnavailable
+	}
 	query := `UPDATE users SET name = $1, updated_at = NOW() WHERE id = $2`
 	_, err := r.db.Exec(ctx, query, name, id)
 	if err != nil {

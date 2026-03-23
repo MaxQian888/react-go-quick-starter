@@ -26,6 +26,9 @@ func (h *AuthHandler) Register(c echo.Context) error {
 	if err := c.Bind(req); err != nil {
 		return c.JSON(http.StatusBadRequest, model.ErrorResponse{Message: "invalid request body"})
 	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, model.ErrorResponse{Message: err.Error()})
+	}
 
 	resp, err := h.authSvc.Register(c.Request().Context(), req)
 	if err != nil {
@@ -43,6 +46,9 @@ func (h *AuthHandler) Login(c echo.Context) error {
 	if err := c.Bind(req); err != nil {
 		return c.JSON(http.StatusBadRequest, model.ErrorResponse{Message: "invalid request body"})
 	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, model.ErrorResponse{Message: err.Error()})
+	}
 
 	resp, err := h.authSvc.Login(c.Request().Context(), req)
 	if err != nil {
@@ -59,6 +65,9 @@ func (h *AuthHandler) Refresh(c echo.Context) error {
 	req := new(model.RefreshRequest)
 	if err := c.Bind(req); err != nil {
 		return c.JSON(http.StatusBadRequest, model.ErrorResponse{Message: "invalid request body"})
+	}
+	if err := c.Validate(req); err != nil {
+		return c.JSON(http.StatusUnprocessableEntity, model.ErrorResponse{Message: err.Error()})
 	}
 
 	resp, err := h.authSvc.Refresh(c.Request().Context(), req.RefreshToken)

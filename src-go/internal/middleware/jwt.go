@@ -2,6 +2,7 @@
 package middleware
 
 import (
+	"context"
 	"errors"
 	"fmt"
 	"net/http"
@@ -10,15 +11,19 @@ import (
 	"github.com/golang-jwt/jwt/v5"
 	"github.com/labstack/echo/v4"
 	"github.com/react-go-quick-starter/server/internal/model"
-	"github.com/react-go-quick-starter/server/internal/repository"
 	"github.com/react-go-quick-starter/server/internal/service"
 )
+
+// TokenBlacklist defines the interface for checking revoked tokens.
+type TokenBlacklist interface {
+	IsBlacklisted(ctx context.Context, jti string) (bool, error)
+}
 
 // JWTContextKey is used to store parsed claims in echo.Context.
 const JWTContextKey = "jwt_claims"
 
-// JWTMiddleware validates the Bearer token and checks Redis blacklist.
-func JWTMiddleware(secret string, cache *repository.CacheRepository) echo.MiddlewareFunc {
+// JWTMiddleware validates the Bearer token and checks the blacklist.
+func JWTMiddleware(secret string, blacklist TokenBlacklist) echo.MiddlewareFunc {
 	return func(next echo.HandlerFunc) echo.HandlerFunc {
 		return func(c echo.Context) error {
 			authHeader := c.Request().Header.Get("Authorization")
@@ -41,7 +46,7 @@ func JWTMiddleware(secret string, cache *repository.CacheRepository) echo.Middle
 			}
 
 			// Check blacklist
-			blacklisted, err := cache.IsBlacklisted(c.Request().Context(), claims.JTI)
+			blacklisted, err := blacklist.IsBlacklisted(c.Request().Context(), claims.JTI)
 			if err != nil {
 				return c.JSON(http.StatusInternalServerError, model.ErrorResponse{Message: "internal server error"})
 			}

@@ -17,7 +17,7 @@ func TestHealth_Returns200WithStatus(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	h := handler.NewHealthHandler("test", "test")
+	h := handler.NewHealthHandler("test", "abc123", "2025-01-01", "test")
 	if err := h.Health(c); err != nil {
 		t.Fatalf("Health() error: %v", err)
 	}
@@ -44,7 +44,7 @@ func TestHealthV1_IncludesVersionAndEnv(t *testing.T) {
 	rec := httptest.NewRecorder()
 	c := e.NewContext(req, rec)
 
-	h := handler.NewHealthHandler("1.0.0", "test")
+	h := handler.NewHealthHandler("1.0.0", "abc123", "2025-01-01", "test")
 	if err := h.HealthV1(c); err != nil {
 		t.Fatalf("HealthV1() error: %v", err)
 	}

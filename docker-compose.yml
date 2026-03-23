@@ -1,5 +1,3 @@
-version: "3.9"
-
 # Development dependencies for the Go backend.
 # Usage: docker compose up -d
 #
@@ -40,6 +38,24 @@ services:
       interval: 5s
       timeout: 3s
       retries: 5
+
+  # Uncomment to run the Go backend as a container
+  # server:
+  #   build:
+  #     context: ./src-go
+  #     dockerfile: Dockerfile
+  #   ports:
+  #     - "7777:7777"
+  #   environment:
+  #     POSTGRES_URL: postgres://dev:dev@postgres:5432/appdb?sslmode=disable
+  #     REDIS_URL: redis://redis:6379
+  #     JWT_SECRET: change-me-in-production-at-least-32-chars
+  #     ENV: development
+  #   depends_on:
+  #     postgres:
+  #       condition: service_healthy
+  #     redis:
+  #       condition: service_healthy
 
 volumes:
   postgres_data:

@@ -2,17 +2,32 @@
 package server
 
 import (
+	"log/slog"
+	"time"
+
+	"github.com/go-playground/validator/v10"
 	"github.com/labstack/echo/v4"
 	echomiddleware "github.com/labstack/echo/v4/middleware"
 	"github.com/labstack/gommon/log"
 	"github.com/react-go-quick-starter/server/internal/config"
+	"github.com/react-go-quick-starter/server/internal/handler"
 	"github.com/react-go-quick-starter/server/internal/repository"
 )
+
+type customValidator struct {
+	validator *validator.Validate
+}
+
+func (cv *customValidator) Validate(i interface{}) error {
+	return cv.validator.Struct(i)
+}
 
 func New(cfg *config.Config, cache *repository.CacheRepository) *echo.Echo {
 	e := echo.New()
 	e.HideBanner = true
 	e.HidePort = false
+	e.Validator = &customValidator{validator: validator.New()}
+	e.HTTPErrorHandler = handler.CustomHTTPErrorHandler
 
 	if cfg.Env == "production" {
 		e.Logger.SetLevel(log.WARN)
@@ -33,11 +48,13 @@ func New(cfg *config.Config, cache *repository.CacheRepository) *echo.Echo {
 		HandleError:  true,
 		LogValuesFunc: func(c echo.Context, v echomiddleware.RequestLoggerValues) error {
 			if v.Error != nil {
-				c.Logger().Errorf("method=%s uri=%s status=%d latency=%dms reqid=%s err=%v",
-					v.Method, v.URI, v.Status, v.Latency.Milliseconds(), v.RequestID, v.Error)
+				slog.Error("request",
+					"method", v.Method, "uri", v.URI, "status", v.Status,
+					"latency_ms", v.Latency.Milliseconds(), "reqid", v.RequestID, "error", v.Error)
 			} else {
-				c.Logger().Infof("method=%s uri=%s status=%d latency=%dms reqid=%s",
-					v.Method, v.URI, v.Status, v.Latency.Milliseconds(), v.RequestID)
+				slog.Info("request",
+					"method", v.Method, "uri", v.URI, "status", v.Status,
+					"latency_ms", v.Latency.Milliseconds(), "reqid", v.RequestID)
 			}
 			return nil
 		},
@@ -56,6 +73,9 @@ func New(cfg *config.Config, cache *repository.CacheRepository) *echo.Echo {
 		XFrameOptions:      "DENY",
 	}))
 	e.Use(echomiddleware.GzipWithConfig(echomiddleware.GzipConfig{Level: 5}))
+	e.Use(echomiddleware.ContextTimeoutWithConfig(echomiddleware.ContextTimeoutConfig{
+		Timeout: 30 * time.Second,
+	}))
 
 	return e
 }
