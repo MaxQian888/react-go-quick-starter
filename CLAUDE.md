@@ -40,33 +40,44 @@ pnpm dlx shadcn@latest add <component-name>
 ## Go Backend Commands
 
 ```bash
-# Run backend directly (requires PostgreSQL + Redis running)
-cd src-go && go run ./cmd/server
+# ── Docker Services ──────────────────────────────────────────────────────
+pnpm services:up      # Start PostgreSQL + Redis (waits for healthy)
+pnpm services:down    # Stop services
+pnpm services:status  # Show container status
+pnpm services:ensure  # Start services only if not already running (idempotent)
 
-# Build for current platform
-cd src-go && go build ./cmd/server
+# ── Standalone Go Backend ─────────────────────────────────────────────────
+pnpm dev:go           # Start Go backend (assumes services already running)
+pnpm dev:backend      # ensure services + start Go backend
+pnpm dev:all          # ensure services + Go backend + Next.js (full stack)
 
-# Run Go tests
-cd src-go && go test ./...
+# ── Direct Go Commands (inside src-go/) ───────────────────────────────────
+cd src-go && go run ./cmd/server   # requires services running + src-go/.env
+cd src-go && go build ./cmd/server # build binary
+cd src-go && go test ./...         # run all tests
 
-# Compile Go sidecar for current platform only (fast, for local dev)
-pnpm build:backend:dev
-
-# Cross-compile Go sidecar for all platforms
-pnpm build:backend
-
-# Start Tauri desktop app with auto-compiled backend
-pnpm tauri:dev
-
-# Full production build: Go binary + Next.js export + Tauri installer
-pnpm tauri:build
+# ── Tauri Desktop (includes services + sidecar compilation) ──────────────
+pnpm tauri:dev        # ensures services → compiles sidecar → launches Tauri
+pnpm tauri:build      # full production build
 ```
 
-### Backend Environment (src-go/.env)
-Copy `src-go/.env.example` to `src-go/.env` and configure:
-- `POSTGRES_URL` — PostgreSQL connection string
-- `REDIS_URL` — Redis connection string
-- `JWT_SECRET` — Must be set (min 32 chars recommended)
+### Environment Setup
+
+```bash
+cp .env.example .env.local          # root config (Next.js + scripts)
+cp src-go/.env.example src-go/.env  # only needed for direct go run
+```
+
+### Backend Environment Variables (`.env.local` or `src-go/.env`)
+
+| Variable | Default | Notes |
+|----------|---------|-------|
+| `PORT` | `3000` | Next.js dev server port |
+| `BACKEND_PORT` | `7777` | Go backend port (standalone dev only) |
+| `POSTGRES_URL` | `postgres://dev:dev@localhost:5432/appdb?sslmode=disable` | |
+| `REDIS_URL` | `redis://localhost:6379` | |
+| `JWT_SECRET` | — | Required in production (min 32 chars) |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:7777` | Must match `BACKEND_PORT` |
 
 ## Architecture
 
