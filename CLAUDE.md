@@ -29,7 +29,10 @@ pnpm test:coverage    # Run tests with coverage report
 pnpm exec tsc --noEmit
 
 # Desktop (Tauri)
-pnpm tauri dev        # Dev mode with hot reload
+# NOTE: Use pnpm tauri:dev / pnpm tauri:build (in Go Backend Commands section)
+# for full development — they auto-start Docker services and compile the sidecar.
+# The raw commands below bypass service orchestration:
+pnpm tauri dev        # Dev mode with hot reload (no auto-services)
 pnpm tauri build      # Build desktop installer
 pnpm tauri info       # Check Tauri environment
 
