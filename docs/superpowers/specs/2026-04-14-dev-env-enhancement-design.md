@@ -27,22 +27,34 @@ The current project has:
 ### Environment File Hierarchy
 
 ```
-.env.example          ← root template (copy to .env.local)
+.env.example          ← root template (copy to .env.local) — TRACKED IN GIT
 .env.local            ← local overrides, gitignored, read by Next.js + scripts
-src-go/.env.example   ← Go-only template (for direct `go run` without npm scripts)
+src-go/.env.example   ← Go-only template (for direct `go run` without npm scripts) — TRACKED IN GIT
 src-go/.env           ← Go-only local overrides, gitignored
 ```
 
-Next.js reads `.env.local` natively.  
-npm orchestration scripts read `.env.local` (then `.env`) via `scripts/load-env.js`.  
+Next.js reads `.env.local` natively.
+npm orchestration scripts read `.env.local` (then `.env`) via `scripts/load-env.js`.
 `scripts/dev-go.js` maps `BACKEND_PORT` → `PORT` when spawning the Go process (avoiding conflict with Next.js `PORT`).
+
+**`.gitignore` update required:** The root `.gitignore` contains `.env*` which would accidentally suppress `.env.example`. Add negation rules:
+
+```
+.env*
+!.env.example
+!src-go/.env.example
+```
 
 ### Root `.env.example`
 
 ```env
 # ── Ports ─────────────────────────────────────────────────────────────────
 PORT=3000            # Next.js dev server port (read by Next.js automatically)
-BACKEND_PORT=7777    # Go backend HTTP port
+BACKEND_PORT=7777    # Go backend HTTP port (standalone dev only — see note below)
+
+# NOTE: BACKEND_PORT only affects `pnpm dev:go` / `pnpm dev:all` (standalone mode).
+# In Tauri desktop mode (`pnpm tauri:dev`), the sidecar always runs on port 7777
+# (hardcoded in src-tauri/src/lib.rs). Do not change BACKEND_PORT for Tauri usage.
 
 # ── Go Backend ────────────────────────────────────────────────────────────
 POSTGRES_URL=postgres://dev:dev@localhost:5432/appdb?sslmode=disable
@@ -51,10 +63,11 @@ JWT_SECRET=dev-secret-change-me-in-production-at-least-32-chars
 JWT_ACCESS_TTL=15m
 JWT_REFRESH_TTL=168h
 ENV=development
-# Update this if you change PORT above
+# Update when you change PORT above
 ALLOW_ORIGINS=http://localhost:3000,tauri://localhost,http://localhost:1420
 
 # ── Frontend (NEXT_PUBLIC_ prefix = exposed to browser) ───────────────────
+# IMPORTANT: Keep NEXT_PUBLIC_API_URL and NEXT_PUBLIC_WS_URL in sync with BACKEND_PORT above
 NEXT_PUBLIC_API_URL=http://localhost:7777
 NEXT_PUBLIC_WS_URL=ws://localhost:7777
 NEXT_PUBLIC_APP_ENV=development
@@ -89,15 +102,17 @@ Pure Node.js (no external deps) `.env` file parser. Loads `.env.local`, falling 
 
 #### `scripts/services.js`
 
-Manages Docker Compose services. Commands:
+Manages Docker Compose services. Pre-flight: runs `docker info` before any operation; exits with a clear human-readable error ("Docker is not running. Please start Docker Desktop and try again.") if Docker is unavailable.
+
+Commands:
 
 | Command | Behavior |
 |---------|----------|
-| `up` | `docker compose up -d`, then polls `docker inspect` until all target containers (`rg-starter-postgres`, `rg-starter-redis`) report `healthy`. Timeout: 60 s. |
+| `up` | `docker compose up -d`, then polls `docker inspect` until all target containers (`rg-starter-postgres`, `rg-starter-redis`) report `healthy`. Timeout: 60 s, poll every 2 s. |
 | `down` | `docker compose down` |
-| `ensure` | Checks if both containers are running and healthy. If either is not, runs `up`. Idempotent. |
+| `ensure` | Calls `docker inspect` on both containers. If either returns non-zero (container absent) or returns a status other than `healthy` (container stopped, starting, or unhealthy), calls `up` unconditionally. `docker compose up -d` is idempotent for already-running services. |
 
-Health check polling uses `docker inspect --format '{{.State.Health.Status}}'`. Polls every 2 s.
+Health check polling uses `docker inspect --format '{{.State.Health.Status}}'`. A non-zero exit from `docker inspect` (container does not exist) is treated identically to an unhealthy status — both trigger `up`.
 
 #### `scripts/dev-go.js`
 
@@ -125,6 +140,8 @@ Starts the Go backend for standalone development:
 
 `concurrently` is added as a `devDependency`.
 
+**Windows `&&` note:** The `&&` operator works in npm/pnpm scripts on Windows via the bundled shell. The existing `tauri:dev` script already uses this pattern without issues. If a future contributor encounters problems, `npm-run-all2` is the migration path.
+
 ### Tauri `beforeDevCommand`
 
 No change required. `tauri:dev` (the npm script) now runs `services:ensure` before handing off to `pnpm tauri dev`. The `beforeDevCommand` inside `tauri.conf.json` remains `pnpm dev`.
@@ -140,6 +157,12 @@ No change required. `tauri:dev` (the npm script) now runs `services:ensure` befo
 - No structural changes; the commented-out `server` service block remains as documentation.
 
 ## Developer Workflows
+
+### Prerequisites
+
+- Docker Desktop installed and running.
+- Go 1.25+ installed (for `pnpm dev:go` / `pnpm dev:all`).
+- Rust toolchain v1.77.2+ (for `pnpm tauri:dev`).
 
 ### First-time setup
 
@@ -167,6 +190,9 @@ pnpm dev           # start Next.js only (separate terminal)
 pnpm tauri:dev     # ensures services → builds sidecar → launches Tauri
 ```
 
+> **Note:** In Tauri desktop mode, `BACKEND_PORT` in `.env.local` has no effect.
+> The sidecar always binds to port 7777 (hardcoded in `src-tauri/src/lib.rs`).
+
 ### Stopping services
 
 ```bash
@@ -175,6 +201,6 @@ pnpm services:down
 
 ## Out of Scope
 
-- Changing the Tauri sidecar port from its hardcoded `7777` (it is fixed by the Rust constant; `BACKEND_PORT` only affects standalone Go dev mode).
+- Making the Tauri sidecar port configurable (it is a Rust compile-time constant in `src-tauri/src/lib.rs`; `BACKEND_PORT` only affects standalone dev mode via npm scripts).
 - Production Docker Compose configuration.
 - CI/CD changes.
