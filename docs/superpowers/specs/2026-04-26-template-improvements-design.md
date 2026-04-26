@@ -144,6 +144,7 @@ SMTP_PASSWORD=
 | `POST` | `/api/v1/auth/totp/setup` | Yes | Generate TOTP secret + QR code URI |
 | `POST` | `/api/v1/auth/totp/verify` | Yes | Verify TOTP code, enable 2FA |
 | `POST` | `/api/v1/auth/totp/disable` | Yes | Disable 2FA (requires current password) |
+| `POST` | `/api/v1/auth/login/totp-confirm` | No | Complete login with TOTP code (requires `session_token` from step 1) |
 | `DELETE` | `/api/v1/auth/sessions` | Yes | Logout all devices (delete all refresh tokens) |
 
 ### 2.4 OAuth Implementation
@@ -240,7 +241,7 @@ Five sections top-to-bottom:
 - Email + Password fields with react-hook-form + zod validation
 - "Remember me" checkbox
 - TOTP input field (conditionally rendered when API returns `totp_required: true`)
-- OAuth buttons: GitHub, Google (lucide-react icons + brand SVGs)
+- OAuth buttons: GitHub, Google (custom inline SVG brand logos — lucide-react does not include brand icons)
 - Links: Forgot password / Register
 
 **Register `/register`**
@@ -259,10 +260,10 @@ Five sections top-to-bottom:
 
 **Layout**: Fixed left sidebar (collapsible, state persisted in Zustand + localStorage) + top bar with breadcrumb + user avatar dropdown (Profile, Settings, Logout).
 
-**Dashboard main page**: 4 stat cards (demo data) + activity Table + one Chart (shadcn/ui chart wrapping recharts).
+**Dashboard main page**: 4 stat cards (hardcoded static demo data, not connected to real API) + activity Table (static rows) + one Chart (shadcn/ui chart wrapping recharts, static data).
 
 **Settings page `/settings`**:
-- Avatar placeholder + Name / Email edit form
+- Avatar display only (no upload — shows initials fallback via `Avatar` component) + Name / Email edit form
 - Email verification status Badge (Verified ✓ / Unverified with "Resend" button)
 
 **Security page `/settings/security`**:
