@@ -39,7 +39,7 @@ Treat Echo work as version-sensitive, repo-specific backend work. Start from the
 
 ### 2. Translate official docs through the installed version
 
-- Official Echo docs checked on 2026-03-23 already show `github.com/labstack/echo/v5` in core examples.
+- Official Echo docs checked on 2026-04-28 already show `github.com/labstack/echo/v5` in core examples.
 - This repository currently depends on `github.com/labstack/echo/v4 v4.15.1`.
 - Verify imports, helper APIs, middleware signatures, and test helpers against `src-go/go.mod` and local compile errors before adopting any doc example.
 - When docs and repo differ, prefer repo-compatible changes unless the task is explicitly a version migration.
@@ -85,7 +85,7 @@ Treat Echo work as version-sensitive, repo-specific backend work. Start from the
 
 ### 7. Keep desktop integration in mind
 
-- This repository's Tauri app expects the Go backend as a sidecar built from `scripts/build-backend.sh`.
+- This repository's Tauri app expects the Go backend as a sidecar built by `node scripts/build-backend.js` (invoked via `pnpm build:backend` or `pnpm build:backend:dev --current-only`).
 - Port defaults and `--port` override live in `src-go/cmd/server/main.go` and must stay compatible with the frontend or Tauri caller.
 - If changing CORS, ports, health endpoints, or binary outputs, verify both `src-go` and `src-tauri` touch points.
 - The current websocket handler accepts the token from either `?token=` or `Authorization: Bearer ...`; preserve that contract unless the task explicitly changes the client handshake.

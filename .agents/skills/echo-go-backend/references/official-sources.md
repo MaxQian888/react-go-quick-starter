@@ -1,10 +1,10 @@
 # Official Sources
 
-Use these sources when you need up-to-date Echo guidance. The links below were checked on 2026-03-23.
+Use these sources when you need up-to-date Echo guidance. The links below were checked on 2026-04-28.
 
 ## Version drift first
 
-- Current official docs now show `github.com/labstack/echo/v5` in the primary Quick Start and Testing examples.
+- Current official docs now show `github.com/labstack/echo/v5` in the primary Quick Start and Testing examples (last verified 2026-04-28).
 - This repository currently pins `github.com/labstack/echo/v4 v4.15.1` in `src-go/go.mod`.
 - Before copying any example, verify:
   - import path and module major version

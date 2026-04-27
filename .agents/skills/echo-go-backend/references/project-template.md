@@ -54,7 +54,7 @@ When adding new authenticated API endpoints, prefer extending the existing `/api
 - `pnpm build:backend:dev`
 - `pnpm tauri:dev`
 
-On this repository, the root build scripts call `bash scripts/build-backend.sh`. If the shell environment cannot run `bash`, fall back to direct `go` commands inside `src-go` for narrow verification before touching the Tauri path.
+On this repository, `pnpm build:backend` calls `node scripts/build-backend.js` (cross-platform, all targets) and `pnpm build:backend:dev` adds `--current-only` for the host triple only. A legacy `scripts/build-backend.sh` exists for environments that require a plain shell script, but the JS version is the authoritative path. If neither pnpm nor Node is available, fall back to direct `go` commands inside `src-go` for narrow verification before touching the Tauri path.
 
 ## Config and environment touch points
 

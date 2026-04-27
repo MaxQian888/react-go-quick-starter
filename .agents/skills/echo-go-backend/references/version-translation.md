@@ -4,7 +4,7 @@ Use this file when the latest Echo docs and the current repository do not descri
 
 ## Current mismatch
 
-- Official docs checked on 2026-03-23 use `github.com/labstack/echo/v5` in Quick Start and Testing examples.
+- Official docs checked on 2026-04-28 use `github.com/labstack/echo/v5` in Quick Start and Testing examples.
 - This repository currently uses `github.com/labstack/echo/v4 v4.15.1`.
 
 That means the docs are still valuable, but they are not paste-ready.

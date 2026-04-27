@@ -4,13 +4,11 @@ Use this file when a command path looks inconsistent, when a runtime fails to st
 
 ## Current Verified Command Behavior
 
-The following behaviors were re-checked against the local repository snapshot while authoring this skill:
-
-- `pnpm build` succeeds and generates static export output.
+- `pnpm build` succeeds and generates static export output in `out/`.
 - `pnpm start` fails with: `Error: "next start" does not work with "output: export" configuration. Use "npx serve@latest out" instead.`
-- `pnpm build:backend:dev` fails on this Windows machine when `/bin/bash` is unavailable.
-- `cd src-go && go build ./cmd/server` succeeds as a narrow backend fallback check.
-- `docker compose config` resolves successfully, but warns that the top-level `version` field is obsolete.
+- `pnpm build:backend:dev` uses `scripts/build-backend.js --current-only` — a cross-platform Node.js script. Works on Windows without bash or WSL.
+- `cd src-go && go build ./cmd/server` succeeds as a narrow backend build check.
+- `docker compose config` resolves successfully (the top-level `version` field was removed from the compose file).
 
 Re-check these if the repo changes.
 
@@ -19,10 +17,11 @@ Re-check these if the repo changes.
 - `hooks/use-backend-url.ts`
   - Browser mode uses `process.env.NEXT_PUBLIC_API_URL ?? "http://localhost:7777"`.
   - Tauri mode calls the Rust command `get_backend_url`.
-- `.env.local.example`
-  - Documents `NEXT_PUBLIC_API_URL=http://localhost:7777`.
+- `.env.example`
+  - Documents `NEXT_PUBLIC_API_URL=http://localhost:7777` and `NEXT_PUBLIC_WS_URL=ws://localhost:7777`.
+  - `ALLOW_ORIGINS=http://localhost:3000,tauri://localhost,http://localhost:1420`.
 - `src-go/.env.example`
-  - Defaults the backend port to `7777` and allows browser plus Tauri origins.
+  - Mirrors the same port and ALLOW_ORIGINS defaults for direct `go run` use.
 - `src-tauri/src/lib.rs`
   - Hardcodes the Tauri sidecar port as `7777`.
 
@@ -37,9 +36,12 @@ If the backend port changes, update all four surfaces together.
   - Uses `frontendDist: "../out"`
   - Uses `beforeBuildCommand: "pnpm build:backend && pnpm build"`
   - Expects `externalBin: ["binaries/server"]`
-- `scripts/build-backend.sh`
-  - Writes sidecar binaries into `src-tauri/binaries/`
-  - Names them as `server-<target-triple>` with `.exe` on Windows
+- `scripts/build-backend.js`
+  - Cross-platform Node.js script — no bash dependency.
+  - Writes sidecar binaries into `src-tauri/binaries/`.
+  - Names them `server-<target-triple>` with `.exe` on Windows.
+  - `--current-only` flag builds only the host platform's binary.
+  - Embeds version, commit, and build date via Go ldflags.
 
 If the binary name or location changes, update the script and Tauri config together.
 
@@ -55,15 +57,16 @@ Reality:
 
 - This repo uses static export, so production delivery is based on `out/`, not a Next.js Node server.
 
-### Windows sidecar build failure
+### Sidecar binary missing or misnamed
 
 Symptom:
 
-- `pnpm build:backend` or `pnpm build:backend:dev` exits before compiling the Go binary
+- The Tauri shell launches but the sidecar fails to start, or `pnpm build:backend:dev` exits with an unexpected error
 
 Reality:
 
-- The repo script requires `bash`. On Windows without WSL or Git Bash on the expected path, use direct Go commands for diagnosis and call out the packaging dependency explicitly.
+- `scripts/build-backend.js` is a cross-platform Node.js script — there is no bash dependency. If the build fails, check that `go` is on `PATH` and that `src-go/` compiles with `cd src-go && go build ./cmd/server`.
+- Verify the output binary exists at `src-tauri/binaries/server-<host-triple>[.exe]` after the build.
 
 ### Desktop app starts without working backend
 

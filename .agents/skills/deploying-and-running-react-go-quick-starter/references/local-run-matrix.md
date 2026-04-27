@@ -19,11 +19,17 @@ Use this file when the task is to start, build, or smoke-test the project locall
 Notes:
 
 - The web app reads `NEXT_PUBLIC_API_URL` from `.env.local`, then falls back to `http://localhost:7777`.
-- Use `.env.local.example` as the starting point when the frontend must call a non-default backend URL.
+- Use `.env.example` as the starting point: `cp .env.example .env.local` and adjust as needed.
 
 ## Backend-Only Local Development
 
-1. Run `docker compose up -d postgres redis`.
+**Via pnpm scripts (recommended):**
+1. Run `pnpm services:up` to start Postgres and Redis and wait for healthy.
+2. Copy `.env.example` to `.env.local` and adjust values if needed.
+3. Run `pnpm dev:go` — loads env from root `.env.local` / `.env`, maps `BACKEND_PORT` → `PORT` for Go.
+
+**Direct Go (fallback):**
+1. Run `docker compose up -d`.
 2. Copy `src-go/.env.example` to `src-go/.env` and adjust values if needed.
 3. Run `cd src-go && go run ./cmd/server`.
 
@@ -31,7 +37,7 @@ Notes:
 
 - The default backend port is `7777`.
 - The backend health surfaces are registered under `/health` and `/api/v1/health`.
-- `src-go/.env.example` currently expects `ALLOW_ORIGINS=http://localhost:3000,tauri://localhost`.
+- `ALLOW_ORIGINS` in `.env.example` includes `http://localhost:3000`, `tauri://localhost`, and `http://localhost:1420` (Tauri dev window).
 
 ## Desktop Development
 
@@ -43,16 +49,15 @@ Preferred path:
 
 What this does:
 
-- Runs `pnpm build:backend:dev`
-- Then runs `pnpm tauri dev`
-- `src-tauri/tauri.conf.json` starts the frontend dev server via `beforeDevCommand: "pnpm dev"`
-- `src-tauri/src/lib.rs` spawns the Go sidecar named `server` on port `7777`
+1. Runs `node scripts/services.js ensure` — starts Postgres and Redis if not already healthy.
+2. Runs `pnpm build:backend:dev` (`node scripts/build-backend.js --current-only`) — compiles the Go sidecar for the current host platform and writes it to `src-tauri/binaries/`.
+3. Runs `pnpm tauri dev`.
+4. `src-tauri/tauri.conf.json` starts the frontend dev server via `beforeDevCommand: "pnpm dev"`.
+5. `src-tauri/src/lib.rs` spawns the Go sidecar named `server` on port `7777`.
 
-Windows warning:
+Windows note:
 
-- `pnpm build:backend:dev` shells out to `bash scripts/build-backend.sh --current-only`.
-- If `/bin/bash` is missing, the helper command fails before Tauri starts.
-- In that case, use direct Go commands for narrow verification and explain that a real Tauri run still needs a sidecar binary that matches the script's output naming under `src-tauri/binaries/`.
+- `scripts/build-backend.js` is a cross-platform Node.js script — no bash, WSL, or Git Bash required. It works natively on Windows.
 
 ## Production-Oriented Local Builds
 

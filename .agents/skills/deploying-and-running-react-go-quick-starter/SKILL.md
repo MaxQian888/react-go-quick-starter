@@ -9,7 +9,7 @@ description: Use when Codex needs to run, package, or deploy this repository's N
 
 Use this skill to choose the correct runtime or deployment path for this repository without falling back to generic Next.js, Go, or Tauri advice that does not match the current project setup.
 
-Keep the repo truth anchored in `package.json`, `next.config.ts`, `scripts/build-backend.sh`, `src-go/.env.example`, `src-tauri/tauri.conf.json`, `src-tauri/src/lib.rs`, and `.github/workflows/*`.
+Keep the repo truth anchored in `package.json`, `next.config.ts`, `scripts/build-backend.js`, `src-go/.env.example`, `.env.example`, `src-tauri/tauri.conf.json`, `src-tauri/src/lib.rs`, and `.github/workflows/*`.
 
 ## Start Here
 
@@ -28,7 +28,7 @@ Keep the repo truth anchored in `package.json`, `next.config.ts`, `scripts/build
 - Treat `pnpm build` as a static export that writes `out/`.
 - Do not recommend `pnpm start` as the production runtime for this repo. `next start` is incompatible with `output: "export"`.
 - For backend-backed local work, start Postgres and Redis first unless the user explicitly says those services already exist elsewhere.
-- On Windows, expect `pnpm build:backend` and `pnpm build:backend:dev` to require `bash`. If `/bin/bash` is missing, fall back to direct Go commands in `src-go` and explain that Tauri sidecar packaging still depends on the script's output contract.
+- `pnpm build:backend` and `pnpm build:backend:dev` use a cross-platform Node.js script (`scripts/build-backend.js`) — no bash dependency. They work on Windows without WSL or Git Bash.
 - Keep the port contract aligned across frontend, Go, and Tauri. Browser mode falls back to `NEXT_PUBLIC_API_URL` and then `http://localhost:7777`; desktop mode asks Rust for the backend URL; Rust sidecar startup currently binds port `7777`.
 - Prove claims with the narrowest command first, then escalate to broader builds only when needed.
 
@@ -36,7 +36,7 @@ Keep the repo truth anchored in `package.json`, `next.config.ts`, `scripts/build
 
 - Web dev: `pnpm dev`
 - Static web build: `pnpm build`
-- Backend deps: `docker compose up -d postgres redis`
+- Backend deps: `pnpm services:up` (or `docker compose up -d`)
 - Backend direct run: `cd src-go && go run ./cmd/server`
 - Backend direct build fallback: `cd src-go && go build ./cmd/server`
 - Desktop dev happy path: `pnpm tauri:dev`
