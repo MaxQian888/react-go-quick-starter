@@ -18,12 +18,17 @@ const config: Config = {
   // Indicates whether the coverage information should be collected while executing the test
   collectCoverage: false, // Set to false by default, enable with --coverage flag
 
-  // An array of glob patterns indicating a set of files for which coverage information should be collected
+  // An array of glob patterns indicating a set of files for which coverage information should be collected.
+  // components/ui/** is the shadcn registry drop-zone — CLI runs may overwrite files there, so per CLAUDE.md
+  // tests cannot be collocated. Excluding the directory keeps coverage honest about code we own.
   collectCoverageFrom: [
     "app/**/*.{js,jsx,ts,tsx}",
     "components/**/*.{js,jsx,ts,tsx}",
     "lib/**/*.{js,jsx,ts,tsx}",
+    "!components/ui/**",
     "!**/*.d.ts",
+    "!**/*.test.{js,jsx,ts,tsx}",
+    "!**/*.spec.{js,jsx,ts,tsx}",
     "!**/node_modules/**",
     "!**/.next/**",
     "!**/coverage/**",
