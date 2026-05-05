@@ -3,40 +3,41 @@
  * This file is executed before each test file
  */
 
-import '@testing-library/jest-dom';
-import React from 'react';
+import "@testing-library/jest-dom";
 
-type MockNextImageProps = React.ComponentPropsWithoutRef<'img'> & {
+import React from "react";
+
+type MockNextImageProps = React.ComponentPropsWithoutRef<"img"> & {
   priority?: boolean;
   fill?: boolean;
 };
 
 // Mock Next.js Image component
-jest.mock('next/image', () => ({
+jest.mock("next/image", () => ({
   __esModule: true,
   default: (props: MockNextImageProps) => {
     const normalizedProps = { ...props };
     delete normalizedProps.priority;
     delete normalizedProps.fill;
-    return React.createElement('img', normalizedProps);
+    return React.createElement("img", normalizedProps);
   },
 }));
 
 // Mock Next.js router
-jest.mock('next/navigation', () => ({
+jest.mock("next/navigation", () => ({
   useRouter() {
     return {
       push: jest.fn(),
       replace: jest.fn(),
       prefetch: jest.fn(),
       back: jest.fn(),
-      pathname: '/',
+      pathname: "/",
       query: {},
-      asPath: '/',
+      asPath: "/",
     };
   },
   usePathname() {
-    return '/';
+    return "/";
   },
   useSearchParams() {
     return new URLSearchParams();
@@ -48,23 +49,16 @@ jest.mock('next/navigation', () => ({
 // English bundle keeps tests that assert on visible text working without
 // forcing every test to wrap in a provider, and avoids loading next-intl's
 // ESM-only build through Jest's transform pipeline.
-jest.mock('next-intl', () => {
+jest.mock("next-intl", () => {
   // eslint-disable-next-line @typescript-eslint/no-require-imports
-  const messages = require('./i18n/messages/en.json') as Record<string, unknown>;
+  const messages = require("./i18n/messages/en.json") as Record<string, unknown>;
 
-  const resolvePath = (
-    root: Record<string, unknown> | undefined,
-    dottedKey: string
-  ): unknown => {
+  const resolvePath = (root: Record<string, unknown> | undefined, dottedKey: string): unknown => {
     if (!root) return undefined;
-    const segments = dottedKey.split('.');
+    const segments = dottedKey.split(".");
     let cursor: unknown = root;
     for (const seg of segments) {
-      if (
-        cursor &&
-        typeof cursor === 'object' &&
-        seg in (cursor as Record<string, unknown>)
-      ) {
+      if (cursor && typeof cursor === "object" && seg in (cursor as Record<string, unknown>)) {
         cursor = (cursor as Record<string, unknown>)[seg];
       } else {
         return undefined;
@@ -77,49 +71,45 @@ jest.mock('next-intl', () => {
     if (!values) return template;
     let out = template.replace(
       /\{(\w+),\s*(?:plural|select|selectordinal),\s*([^{}]*\{[^{}]*\}[^{}]*)*\s*other\s*\{([^}]*)\}\s*\}/g,
-      (_match, _name, _branches, otherBody) => otherBody
+      (_match, _name, _branches, otherBody) => otherBody,
     );
     out = Object.entries(values).reduce(
-      (acc, [k, v]) =>
-        acc.replace(new RegExp(`\\{\\s*${k}\\s*\\}`, 'g'), String(v)),
-      out
+      (acc, [k, v]) => acc.replace(new RegExp(`\\{\\s*${k}\\s*\\}`, "g"), String(v)),
+      out,
     );
     return out;
   };
 
   const makeTranslator = (namespace?: string) => {
     const root = namespace
-      ? (resolvePath(messages, namespace) as
-          | Record<string, unknown>
-          | undefined)
+      ? (resolvePath(messages, namespace) as Record<string, unknown> | undefined)
       : (messages as Record<string, unknown>);
     const t = (key: string, values?: Record<string, unknown>) => {
       const resolved = resolvePath(root, key);
-      const template = typeof resolved === 'string' ? resolved : key;
+      const template = typeof resolved === "string" ? resolved : key;
       return interpolate(template, values);
     };
     (t as unknown as { rich: typeof t }).rich = t;
     (t as unknown as { markup: typeof t }).markup = t;
     (t as unknown as { has: (k: string) => boolean }).has = (k: string) =>
-      typeof resolvePath(root, k) === 'string';
+      typeof resolvePath(root, k) === "string";
     return t;
   };
 
   return {
     useTranslations: (namespace?: string) => makeTranslator(namespace),
     getTranslations: async (namespace?: string) => makeTranslator(namespace),
-    useLocale: () => 'en',
+    useLocale: () => "en",
     useMessages: () => messages,
     useNow: () => new Date(),
-    useTimeZone: () => 'UTC',
+    useTimeZone: () => "UTC",
     useFormatter: () => ({
       dateTime: (d: Date | number) => new Date(d).toISOString(),
       number: (n: number) => String(n),
       relativeTime: (d: Date | number) => new Date(d).toISOString(),
-      list: (items: Iterable<string>) => Array.from(items).join(', '),
+      list: (items: Iterable<string>) => Array.from(items).join(", "),
     }),
-    NextIntlClientProvider: ({ children }: { children: React.ReactNode }) =>
-      children,
+    NextIntlClientProvider: ({ children }: { children: React.ReactNode }) => children,
   };
 });
 
@@ -129,4 +119,3 @@ jest.mock('next-intl', () => {
 //   error: jest.fn(),
 //   warn: jest.fn(),
 // };
-

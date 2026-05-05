@@ -2,8 +2,8 @@
 
 import { NextIntlClientProvider } from "next-intl";
 
-import { allMessages } from "@/i18n/messages";
 import { defaultLocale } from "@/i18n/config";
+import { allMessages } from "@/i18n/messages";
 import { useLocaleStore } from "@/stores/locale-store";
 
 /**

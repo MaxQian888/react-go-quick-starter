@@ -11,7 +11,9 @@ import (
 	"github.com/labstack/gommon/log"
 	"github.com/react-go-quick-starter/server/internal/config"
 	"github.com/react-go-quick-starter/server/internal/handler"
+	appMiddleware "github.com/react-go-quick-starter/server/internal/middleware"
 	"github.com/react-go-quick-starter/server/internal/repository"
+	"github.com/react-go-quick-starter/server/pkg/logger"
 )
 
 type customValidator struct {
@@ -35,9 +37,14 @@ func New(cfg *config.Config, cache *repository.CacheRepository) *echo.Echo {
 		e.Logger.SetLevel(log.DEBUG)
 	}
 
-	// Middleware stack (order matters)
+	// Middleware stack (order matters). Recover first so subsequent middleware
+	// failures still get observed; RequestID + propagation second so every
+	// downstream log line and metric carries the same correlation id.
 	e.Use(echomiddleware.Recover())
 	e.Use(echomiddleware.RequestID())
+	e.Use(propagateRequestID())
+	httpMetrics := appMiddleware.NewHTTPMetrics("rgs")
+	e.Use(httpMetrics.Middleware())
 	e.Use(echomiddleware.RequestLoggerWithConfig(echomiddleware.RequestLoggerConfig{
 		LogMethod:    true,
 		LogURI:       true,
@@ -78,4 +85,23 @@ func New(cfg *config.Config, cache *repository.CacheRepository) *echo.Echo {
 	}))
 
 	return e
+}
+
+// propagateRequestID copies the X-Request-ID set by Echo's RequestID middleware
+// into the context so logger.FromContext(ctx) and downstream services emit it
+// without each handler having to plumb it through manually.
+func propagateRequestID() echo.MiddlewareFunc {
+	return func(next echo.HandlerFunc) echo.HandlerFunc {
+		return func(c echo.Context) error {
+			rid := c.Response().Header().Get(echo.HeaderXRequestID)
+			if rid == "" {
+				rid = c.Request().Header.Get(echo.HeaderXRequestID)
+			}
+			if rid != "" {
+				ctx := logger.WithRequestID(c.Request().Context(), rid)
+				c.SetRequest(c.Request().WithContext(ctx))
+			}
+			return next(c)
+		}
+	}
 }

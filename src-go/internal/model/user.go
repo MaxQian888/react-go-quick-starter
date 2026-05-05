@@ -40,7 +40,9 @@ func (u *User) ToDTO() UserDTO {
 type RegisterRequest struct {
 	Email    string `json:"email" validate:"required,email"`
 	Password string `json:"password" validate:"required,min=8"`
-	Name     string `json:"name" validate:"required"`
+	// Name is optional. Templates that surface a separate name field will set
+	// it; minimal email-only flows (the default starter UI) leave it blank.
+	Name string `json:"name"`
 }
 
 type LoginRequest struct {

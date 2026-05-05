@@ -14,6 +14,7 @@ import (
 type DBTX interface {
 	Exec(ctx context.Context, sql string, arguments ...any) (pgconn.CommandTag, error)
 	QueryRow(ctx context.Context, sql string, args ...any) pgx.Row
+	Query(ctx context.Context, sql string, args ...any) (pgx.Rows, error)
 }
 
 type UserRepository struct {
@@ -22,6 +23,12 @@ type UserRepository struct {
 
 func NewUserRepository(db DBTX) *UserRepository {
 	return &UserRepository{db: db}
+}
+
+// WithTx returns a copy of the repository scoped to the given transaction so
+// it can take part in a multi-statement atomic write. See repository.WithTx.
+func (r *UserRepository) WithTx(tx DBTX) *UserRepository {
+	return &UserRepository{db: tx}
 }
 
 func (r *UserRepository) Create(ctx context.Context, user *model.User) error {

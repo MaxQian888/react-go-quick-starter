@@ -27,10 +27,7 @@ function runAndCapture(command, args, options = {}) {
   }
 }
 
-function getFallbackTriple({
-  platform = process.platform,
-  arch = process.arch,
-} = {}) {
+function getFallbackTriple({ platform = process.platform, arch = process.arch } = {}) {
   if (platform === "win32" && arch === "x64") {
     return "x86_64-pc-windows-msvc";
   }
@@ -62,9 +59,7 @@ function detectHostTriple({ cwd } = {}) {
   }
 
   const rustcVerbose = runAndCapture("rustc", ["-vV"], { cwd });
-  const hostLine = rustcVerbose
-    .split(/\r?\n/u)
-    .find((line) => line.startsWith("host:"));
+  const hostLine = rustcVerbose.split(/\r?\n/u).find((line) => line.startsWith("host:"));
 
   if (hostLine) {
     return hostLine.replace("host:", "").trim();
@@ -101,9 +96,7 @@ function resolveTargets({ currentOnly = false, hostTriple } = {}) {
     return [target];
   }
 
-  console.warn(
-    `Unknown triple: ${resolvedHostTriple} - defaulting to windows/amd64`,
-  );
+  console.warn(`Unknown triple: ${resolvedHostTriple} - defaulting to windows/amd64`);
 
   return [
     {
@@ -133,8 +126,7 @@ function getLdflags(repoRoot) {
     }) ||
     "dev";
   const commit =
-    runAndCapture("git", ["rev-parse", "--short", "HEAD"], { cwd: repoRoot }) ||
-    "unknown";
+    runAndCapture("git", ["rev-parse", "--short", "HEAD"], { cwd: repoRoot }) || "unknown";
   const buildDate = new Date().toISOString();
 
   return [
@@ -148,14 +140,9 @@ function getLdflags(repoRoot) {
 
 function buildTarget(target, { goDir, binariesDir, ldflags }) {
   const extension = target.goos === "windows" ? ".exe" : "";
-  const outputPath = path.join(
-    binariesDir,
-    `server-${target.triple}${extension}`,
-  );
+  const outputPath = path.join(binariesDir, `server-${target.triple}${extension}`);
 
-  console.log(
-    `-> Building ${target.goos}/${target.goarch} -> ${path.basename(outputPath)}`,
-  );
+  console.log(`-> Building ${target.goos}/${target.goarch} -> ${path.basename(outputPath)}`);
 
   const result = spawnSync(
     "go",
@@ -201,18 +188,14 @@ function main(argv = process.argv.slice(2)) {
   }
 
   console.log("");
-  console.log(
-    `Backend build complete. Binaries in: ${directories.binariesDir}`,
-  );
+  console.log(`Backend build complete. Binaries in: ${directories.binariesDir}`);
 }
 
 if (require.main === module) {
   try {
     main();
   } catch (error) {
-    console.error(
-      error instanceof Error ? error.message : "Unknown backend build error",
-    );
+    console.error(error instanceof Error ? error.message : "Unknown backend build error");
     process.exit(1);
   }
 }

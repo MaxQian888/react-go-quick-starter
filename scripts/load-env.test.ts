@@ -1,8 +1,8 @@
 /** @jest-environment node */
 
 import * as fs from "node:fs";
-import * as path from "node:path";
 import * as os from "node:os";
+import * as path from "node:path";
 
 // eslint-disable-next-line @typescript-eslint/no-require-imports
 const { parseEnvFile, loadEnv } = require("./load-env");
@@ -50,12 +50,9 @@ describe("parseEnvFile", () => {
 
   test("handles values containing = sign (e.g. connection strings)", () => {
     expect(
-      parseEnvFile(
-        "POSTGRES_URL=postgres://user:pass@localhost:5432/db?sslmode=require",
-      ),
+      parseEnvFile("POSTGRES_URL=postgres://user:pass@localhost:5432/db?sslmode=require"),
     ).toEqual({
-      POSTGRES_URL:
-        "postgres://user:pass@localhost:5432/db?sslmode=require",
+      POSTGRES_URL: "postgres://user:pass@localhost:5432/db?sslmode=require",
     });
   });
 

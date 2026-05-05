@@ -3,8 +3,8 @@
 import { useTranslations } from "next-intl";
 
 import { locales, type Locale } from "@/i18n/config";
-import { useLocaleStore } from "@/stores/locale-store";
 import { cn } from "@/lib/utils";
+import { useLocaleStore } from "@/stores/locale-store";
 
 export function LocaleSwitcher() {
   const t = useTranslations("LocaleSwitcher");

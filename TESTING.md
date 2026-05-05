@@ -77,10 +77,10 @@ describe('Button', () => {
   it('handles click events', async () => {
     const handleClick = jest.fn();
     const user = userEvent.setup();
-    
+
     render(<Button onClick={handleClick}>Click me</Button>);
     await user.click(screen.getByRole('button'));
-    
+
     expect(handleClick).toHaveBeenCalledTimes(1);
   });
 });
@@ -89,12 +89,12 @@ describe('Button', () => {
 ### Utility Function Test Example
 
 ```typescript
-import { cn } from './utils';
+import { cn } from "./utils";
 
-describe('cn utility function', () => {
-  it('merges class names correctly', () => {
-    const result = cn('class1', 'class2');
-    expect(result).toBe('class1 class2');
+describe("cn utility function", () => {
+  it("merges class names correctly", () => {
+    const result = cn("class1", "class2");
+    expect(result).toBe("class1 class2");
   });
 });
 ```
@@ -185,7 +185,7 @@ expect(component.state.count).toBe(1);
 ✅ Good:
 
 ```typescript
-expect(screen.getByText('Count: 1')).toBeInTheDocument();
+expect(screen.getByText("Count: 1")).toBeInTheDocument();
 ```
 
 ### 2. Use Accessible Queries

@@ -1,12 +1,12 @@
-import { createApiClient, ApiError } from "./api-client";
+import { ApiError, createApiClient } from "./api-client";
 
 const BASE = "http://localhost:7777";
 
-function mockFetch(status: number, body: unknown) {
+function mockFetchOnce(status: number, body: unknown) {
   return jest.fn().mockResolvedValue({
     ok: status >= 200 && status < 300,
     status,
-    json: () => Promise.resolve(body),
+    text: () => Promise.resolve(JSON.stringify(body)),
   });
 }
 
@@ -15,196 +15,193 @@ beforeEach(() => {
 });
 
 describe("createApiClient", () => {
-  const api = createApiClient(BASE);
+  describe("verbs", () => {
+    const api = createApiClient(BASE);
 
-  describe("get", () => {
-    it("sends GET and returns data", async () => {
-      global.fetch = mockFetch(200, { id: 1 });
+    it("GET sends method and parses body", async () => {
+      global.fetch = mockFetchOnce(200, { id: 1 });
 
-      const res = await api.get("/users");
+      const res = await api.get<{ id: number }>("/users");
 
       expect(fetch).toHaveBeenCalledWith(
         `${BASE}/users`,
-        expect.objectContaining({ method: "GET" })
+        expect.objectContaining({ method: "GET" }),
       );
       expect(res).toEqual({ data: { id: 1 }, status: 200 });
     });
 
-    it("sends Authorization header when token provided", async () => {
-      global.fetch = mockFetch(200, {});
+    it("POST stringifies body and sets Content-Type", async () => {
+      global.fetch = mockFetchOnce(201, { id: 1 });
 
-      await api.get("/me", { token: "tok123" });
+      await api.post("/users", { name: "Alice" });
 
-      expect(fetch).toHaveBeenCalledWith(
-        `${BASE}/me`,
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            Authorization: "Bearer tok123",
-          }),
-        })
-      );
+      const [, init] = (fetch as jest.Mock).mock.calls[0];
+      expect(init.method).toBe("POST");
+      expect(init.body).toBe(JSON.stringify({ name: "Alice" }));
+      expect((init.headers as Headers).get("Content-Type")).toBe("application/json");
+    });
+
+    it("PUT and DELETE send the right method", async () => {
+      global.fetch = mockFetchOnce(200, {});
+      await api.put("/users/1", { name: "Bob" });
+      expect((fetch as jest.Mock).mock.calls[0][1].method).toBe("PUT");
+
+      global.fetch = mockFetchOnce(200, {});
+      await api.delete("/users/1");
+      expect((fetch as jest.Mock).mock.calls[0][1].method).toBe("DELETE");
     });
   });
 
-  describe("post", () => {
-    it("sends POST with JSON body", async () => {
-      global.fetch = mockFetch(201, { id: 1 });
+  describe("auth handlers", () => {
+    it("attaches Authorization when getToken returns a token", async () => {
+      const api = createApiClient(BASE, { getToken: () => "tok123" });
+      global.fetch = mockFetchOnce(200, {});
 
-      const res = await api.post("/users", { name: "Alice" });
+      await api.get("/me");
 
-      expect(fetch).toHaveBeenCalledWith(
-        `${BASE}/users`,
-        expect.objectContaining({
-          method: "POST",
-          body: JSON.stringify({ name: "Alice" }),
-        })
-      );
-      expect(res.status).toBe(201);
+      const [, init] = (fetch as jest.Mock).mock.calls[0];
+      expect((init.headers as Headers).get("Authorization")).toBe("Bearer tok123");
     });
 
-    it("sends Authorization header when token provided", async () => {
-      global.fetch = mockFetch(201, {});
+    it("skips Authorization when skipAuth is true", async () => {
+      const api = createApiClient(BASE, { getToken: () => "tok" });
+      global.fetch = mockFetchOnce(200, {});
 
-      await api.post("/users", {}, { token: "tok" });
+      await api.get("/public", { skipAuth: true });
 
-      expect(fetch).toHaveBeenCalledWith(
-        `${BASE}/users`,
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            Authorization: "Bearer tok",
-          }),
-        })
-      );
-    });
-  });
-
-  describe("put", () => {
-    it("sends PUT with JSON body", async () => {
-      global.fetch = mockFetch(200, { updated: true });
-
-      const res = await api.put("/users/1", { name: "Bob" });
-
-      expect(fetch).toHaveBeenCalledWith(
-        `${BASE}/users/1`,
-        expect.objectContaining({
-          method: "PUT",
-          body: JSON.stringify({ name: "Bob" }),
-        })
-      );
-      expect(res.data).toEqual({ updated: true });
+      const [, init] = (fetch as jest.Mock).mock.calls[0];
+      expect((init.headers as Headers).get("Authorization")).toBeNull();
     });
 
-    it("sends Authorization header when token provided", async () => {
-      global.fetch = mockFetch(200, {});
+    it("retries once with refreshed token on 401", async () => {
+      const refreshToken = jest.fn().mockResolvedValue("fresh");
+      let calls = 0;
+      const fetchMock = jest.fn().mockImplementation(() => {
+        calls += 1;
+        if (calls === 1) {
+          return Promise.resolve({
+            ok: false,
+            status: 401,
+            text: () => Promise.resolve(""),
+          });
+        }
+        return Promise.resolve({
+          ok: true,
+          status: 200,
+          text: () => Promise.resolve(JSON.stringify({ ok: true })),
+        });
+      });
+      global.fetch = fetchMock;
 
-      await api.put("/users/1", {}, { token: "t" });
+      const api = createApiClient(BASE, {
+        getToken: () => "stale",
+        refreshToken,
+      });
 
-      expect(fetch).toHaveBeenCalledWith(
-        `${BASE}/users/1`,
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            Authorization: "Bearer t",
-          }),
-        })
-      );
+      const res = await api.get<{ ok: boolean }>("/me");
+
+      expect(refreshToken).toHaveBeenCalledTimes(1);
+      expect(fetchMock).toHaveBeenCalledTimes(2);
+      const secondCall = fetchMock.mock.calls[1][1];
+      expect((secondCall.headers as Headers).get("Authorization")).toBe("Bearer fresh");
+      expect(res.data).toEqual({ ok: true });
     });
-  });
 
-  describe("delete", () => {
-    it("sends DELETE request", async () => {
-      global.fetch = mockFetch(200, { deleted: true });
+    it("coalesces concurrent 401 retries into one refresh", async () => {
+      const refreshToken = jest.fn().mockResolvedValue("fresh");
+      const fetchMock = jest.fn().mockImplementation((_url: string, init: RequestInit) => {
+        const auth = (init.headers as Headers).get("Authorization");
+        return Promise.resolve(
+          auth === "Bearer fresh"
+            ? { ok: true, status: 200, text: () => Promise.resolve("{}") }
+            : { ok: false, status: 401, text: () => Promise.resolve("") },
+        );
+      });
+      global.fetch = fetchMock;
 
-      const res = await api.delete("/users/1");
+      const api = createApiClient(BASE, {
+        getToken: () => "stale",
+        refreshToken,
+      });
 
-      expect(fetch).toHaveBeenCalledWith(
-        `${BASE}/users/1`,
-        expect.objectContaining({ method: "DELETE" })
-      );
-      expect(res.data).toEqual({ deleted: true });
+      await Promise.all([api.get("/a"), api.get("/b"), api.get("/c")]);
+
+      expect(refreshToken).toHaveBeenCalledTimes(1);
     });
 
-    it("sends Authorization header when token provided", async () => {
-      global.fetch = mockFetch(200, {});
+    it("calls onAuthFailure when refresh returns null", async () => {
+      const onAuthFailure = jest.fn();
+      global.fetch = mockFetchOnce(401, {});
 
-      await api.delete("/users/1", { token: "t" });
+      const api = createApiClient(BASE, {
+        getToken: () => "stale",
+        refreshToken: () => Promise.resolve(null),
+        onAuthFailure,
+      });
 
-      expect(fetch).toHaveBeenCalledWith(
-        `${BASE}/users/1`,
-        expect.objectContaining({
-          headers: expect.objectContaining({
-            Authorization: "Bearer t",
-          }),
-        })
-      );
+      await expect(api.get("/me")).rejects.toThrow(ApiError);
+      expect(onAuthFailure).toHaveBeenCalledTimes(1);
     });
   });
 
   describe("error handling", () => {
-    it("throws ApiError on non-ok response with server message", async () => {
-      global.fetch = mockFetch(401, { message: "unauthorized" });
+    const api = createApiClient(BASE);
 
-      await expect(api.get("/secret")).rejects.toThrow(ApiError);
-      await expect(api.get("/secret")).rejects.toThrow("unauthorized");
+    it("throws ApiError with server message", async () => {
+      global.fetch = mockFetchOnce(401, { message: "unauthorized" });
+
+      const err = await api.get("/secret").catch((e) => e);
+      expect(err).toBeInstanceOf(ApiError);
+      expect(err.message).toBe("unauthorized");
+      expect(err.status).toBe(401);
     });
 
-    it("throws ApiError with HTTP status when no message in body", async () => {
-      global.fetch = mockFetch(500, {});
+    it("falls back to HTTP <status> when no message", async () => {
+      global.fetch = mockFetchOnce(500, {});
 
-      try {
-        await api.get("/fail");
-        fail("should have thrown");
-      } catch (e) {
-        expect(e).toBeInstanceOf(ApiError);
-        expect((e as ApiError).status).toBe(500);
-        expect((e as ApiError).message).toBe("HTTP 500");
-      }
+      const err = await api.get("/fail").catch((e) => e);
+      expect(err).toBeInstanceOf(ApiError);
+      expect(err.message).toBe("HTTP 500");
     });
 
-    it("handles response with unparseable JSON", async () => {
+    it("survives unparseable JSON bodies", async () => {
       global.fetch = jest.fn().mockResolvedValue({
         ok: false,
         status: 502,
-        json: () => Promise.reject(new Error("bad json")),
+        text: () => Promise.resolve("<html>bad gateway</html>"),
       });
 
-      try {
-        await api.get("/bad");
-        fail("should have thrown");
-      } catch (e) {
-        expect(e).toBeInstanceOf(ApiError);
-        expect((e as ApiError).status).toBe(502);
-      }
+      const err = await api.get("/bad").catch((e) => e);
+      expect(err).toBeInstanceOf(ApiError);
+      expect(err.status).toBe(502);
     });
   });
 
   describe("wsUrl", () => {
+    const api = createApiClient(BASE);
+
     it("converts http to ws", () => {
       expect(api.wsUrl("/ws")).toBe("ws://localhost:7777/ws");
     });
 
     it("converts https to wss", () => {
-      const secureApi = createApiClient("https://example.com");
-      expect(secureApi.wsUrl("/ws")).toBe("wss://example.com/ws");
+      const secure = createApiClient("https://example.com");
+      expect(secure.wsUrl("/ws")).toBe("wss://example.com/ws");
     });
 
     it("appends token as query param", () => {
-      expect(api.wsUrl("/ws", "mytoken")).toBe(
-        "ws://localhost:7777/ws?token=mytoken"
-      );
+      expect(api.wsUrl("/ws", "tok")).toBe("ws://localhost:7777/ws?token=tok");
     });
   });
 
   describe("base URL handling", () => {
-    it("strips trailing slash from base URL", async () => {
-      const api2 = createApiClient("http://localhost:7777/");
-      global.fetch = mockFetch(200, {});
+    it("strips trailing slash", async () => {
+      const api = createApiClient("http://localhost:7777/");
+      global.fetch = mockFetchOnce(200, {});
 
-      await api2.get("/test");
+      await api.get("/test");
 
-      expect(fetch).toHaveBeenCalledWith(
-        "http://localhost:7777/test",
-        expect.anything()
-      );
+      expect(fetch).toHaveBeenCalledWith("http://localhost:7777/test", expect.anything());
     });
   });
 });

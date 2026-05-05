@@ -29,9 +29,7 @@ function sleep(ms) {
 function requireDocker() {
   const result = spawnSync("docker", ["info"], { stdio: "ignore" });
   if (result.status !== 0) {
-    console.error(
-      "Error: Docker is not running. Please start Docker Desktop and try again.",
-    );
+    console.error("Error: Docker is not running. Please start Docker Desktop and try again.");
     process.exit(1);
   }
 }
@@ -44,11 +42,10 @@ function requireDocker() {
  * define HEALTHCHECK so this project is not affected.
  */
 function getContainerHealth(name) {
-  const result = spawnSync(
-    "docker",
-    ["inspect", "--format", "{{.State.Health.Status}}", name],
-    { encoding: "utf8", stdio: ["ignore", "pipe", "ignore"] },
-  );
+  const result = spawnSync("docker", ["inspect", "--format", "{{.State.Health.Status}}", name], {
+    encoding: "utf8",
+    stdio: ["ignore", "pipe", "ignore"],
+  });
   if (result.status !== 0) return null; // container absent
   return result.stdout.trim(); // 'healthy' | 'unhealthy' | 'starting' | ''
 }
@@ -117,9 +114,7 @@ const COMMANDS = { up: cmdUp, down: cmdDown, ensure: cmdEnsure };
 function main(argv = process.argv.slice(2)) {
   const cmd = argv[0];
   if (!cmd || !(cmd in COMMANDS)) {
-    console.error(
-      `Usage: node scripts/services.js <${Object.keys(COMMANDS).join("|")}>`,
-    );
+    console.error(`Usage: node scripts/services.js <${Object.keys(COMMANDS).join("|")}>`);
     process.exit(1);
   }
   COMMANDS[cmd]();

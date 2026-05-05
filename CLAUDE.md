@@ -65,16 +65,16 @@ cp src-go/.env.example src-go/.env  # only needed for direct go run
 
 ### Backend Environment Variables (`.env.local` or `src-go/.env`)
 
-| Variable | Default | Notes |
-|----------|---------|-------|
-| `PORT` | `3000` | Next.js dev server port |
-| `BACKEND_PORT` | `7777` | Go backend port (standalone dev only; Tauri always uses 7777) |
-| `POSTGRES_URL` | `postgres://dev:dev@localhost:5432/appdb?sslmode=disable` | |
-| `REDIS_URL` | `redis://localhost:6379` | |
-| `JWT_SECRET` | — | Required in production (min 32 chars) |
-| `NEXT_PUBLIC_API_URL` | `http://localhost:7777` | Must match `BACKEND_PORT` |
-| `NEXT_PUBLIC_WS_URL` | `ws://localhost:7777` | Must match `BACKEND_PORT` |
-| `ALLOW_ORIGINS` | `http://localhost:3000` | Include `tauri://localhost` for desktop builds |
+| Variable              | Default                                                   | Notes                                                         |
+| --------------------- | --------------------------------------------------------- | ------------------------------------------------------------- |
+| `PORT`                | `3000`                                                    | Next.js dev server port                                       |
+| `BACKEND_PORT`        | `7777`                                                    | Go backend port (standalone dev only; Tauri always uses 7777) |
+| `POSTGRES_URL`        | `postgres://dev:dev@localhost:5432/appdb?sslmode=disable` |                                                               |
+| `REDIS_URL`           | `redis://localhost:6379`                                  |                                                               |
+| `JWT_SECRET`          | —                                                         | Required in production (min 32 chars)                         |
+| `NEXT_PUBLIC_API_URL` | `http://localhost:7777`                                   | Must match `BACKEND_PORT`                                     |
+| `NEXT_PUBLIC_WS_URL`  | `ws://localhost:7777`                                     | Must match `BACKEND_PORT`                                     |
+| `ALLOW_ORIGINS`       | `http://localhost:3000`                                   | Include `tauri://localhost` for desktop builds                |
 
 ## Architecture
 
@@ -142,14 +142,14 @@ Layered architecture: handler → service → repository → database
 
 ## CI/CD (`.github/workflows/`)
 
-| Workflow | Trigger | Purpose |
-|----------|---------|---------|
-| `go-ci.yml` | PR + push | Go unit tests + lint; integration tests on master/develop only |
-| `test.yml` | PR + push | Frontend tests + coverage |
-| `build-tauri.yml` | PR + push | Multi-platform desktop builds (macOS, Windows, Linux) |
-| `quality.yml` | PR + push | Code quality checks |
-| `deploy.yml` | push to master | Production deployment |
-| `release.yml` | tag | Automated release |
+| Workflow          | Trigger        | Purpose                                                        |
+| ----------------- | -------------- | -------------------------------------------------------------- |
+| `go-ci.yml`       | PR + push      | Go unit tests + lint; integration tests on master/develop only |
+| `test.yml`        | PR + push      | Frontend tests + coverage                                      |
+| `build-tauri.yml` | PR + push      | Multi-platform desktop builds (macOS, Windows, Linux)          |
+| `quality.yml`     | PR + push      | Code quality checks                                            |
+| `deploy.yml`      | push to master | Production deployment                                          |
+| `release.yml`     | tag            | Automated release                                              |
 
 ## Code Patterns
 

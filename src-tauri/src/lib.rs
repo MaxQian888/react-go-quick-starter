@@ -17,9 +17,21 @@ fn get_backend_url(state: State<BackendState>) -> String {
 pub fn run() {
     const BACKEND_PORT: u16 = 7777;
 
-    tauri::Builder::default()
+    let mut builder = tauri::Builder::default()
         .plugin(tauri_plugin_log::Builder::new().build())
         .plugin(tauri_plugin_shell::init())
+        .plugin(tauri_plugin_os::init())
+        .plugin(tauri_plugin_dialog::init())
+        .plugin(tauri_plugin_notification::init())
+        .plugin(tauri_plugin_fs::init())
+        .plugin(tauri_plugin_store::Builder::default().build());
+
+    #[cfg(feature = "updater")]
+    {
+        builder = builder.plugin(tauri_plugin_updater::Builder::new().build());
+    }
+
+    builder
         .manage(BackendState {
             url: Mutex::new(format!("http://localhost:{}", BACKEND_PORT)),
         })

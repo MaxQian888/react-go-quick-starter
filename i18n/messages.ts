@@ -1,6 +1,6 @@
+import type { Locale } from "./config";
 import en from "./messages/en.json";
 import zh from "./messages/zh.json";
-import type { Locale } from "./config";
 
 export type Messages = typeof en;
 

@@ -1,4 +1,5 @@
 import { getRequestConfig } from "next-intl/server";
+
 import { defaultLocale } from "./config";
 
 // Static export: build-time renders only the default locale.

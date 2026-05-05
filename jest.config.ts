@@ -34,25 +34,13 @@ const config: Config = {
   coverageDirectory: "coverage",
 
   // An array of regexp pattern strings used to skip coverage collection
-  coveragePathIgnorePatterns: [
-    "/node_modules/",
-    "/.next/",
-    "/out/",
-    "/coverage/",
-  ],
+  coveragePathIgnorePatterns: ["/node_modules/", "/.next/", "/out/", "/coverage/"],
 
   // Indicates which provider should be used to instrument code for coverage
   coverageProvider: "v8",
 
   // A list of reporter names that Jest uses when writing coverage reports
-  coverageReporters: [
-    "json",
-    "text",
-    "lcov",
-    "html",
-    "clover",
-    "cobertura",
-  ],
+  coverageReporters: ["json", "text", "lcov", "html", "clover", "cobertura"],
 
   // Coverage thresholds - enforce minimum coverage in CI
   // Uncomment to enable strict coverage requirements
@@ -100,18 +88,7 @@ const config: Config = {
   // ],
 
   // An array of file extensions your modules use
-  moduleFileExtensions: [
-    "js",
-    "mjs",
-    "cjs",
-    "jsx",
-    "ts",
-    "mts",
-    "cts",
-    "tsx",
-    "json",
-    "node"
-  ],
+  moduleFileExtensions: ["js", "mjs", "cjs", "jsx", "ts", "mts", "cts", "tsx", "json", "node"],
 
   // A map from regular expressions to module names or to arrays of module names that allow to stub out resources with a single module
   moduleNameMapper: {
@@ -129,11 +106,7 @@ const config: Config = {
   },
 
   // An array of regexp pattern strings, matched against all module paths before considered 'visible' to the module loader
-  modulePathIgnorePatterns: [
-    "<rootDir>/out/",
-    "<rootDir>/.next/",
-    "<rootDir>/.worktrees/",
-  ],
+  modulePathIgnorePatterns: ["<rootDir>/out/", "<rootDir>/.next/", "<rootDir>/.worktrees/"],
 
   // Activates notifications for test results
   // notify: false,
@@ -208,10 +181,7 @@ const config: Config = {
   // testLocationInResults: false,
 
   // The glob patterns Jest uses to detect test files
-  testMatch: [
-    "**/__tests__/**/*.?([mc])[jt]s?(x)",
-    "**/?(*.)+(spec|test).?([mc])[jt]s?(x)"
-  ],
+  testMatch: ["**/__tests__/**/*.?([mc])[jt]s?(x)", "**/?(*.)+(spec|test).?([mc])[jt]s?(x)"],
 
   // An array of regexp pattern strings that are matched against all test paths, matched tests are skipped
   testPathIgnorePatterns: [
@@ -220,6 +190,7 @@ const config: Config = {
     "/out/",
     "/src-tauri/",
     "/.worktrees/",
+    "/e2e/",
   ],
 
   // The regexp pattern or array of patterns that Jest uses to detect test files

@@ -1,3 +1,15 @@
+// @title          React Go Quick Starter API
+// @version        1.0
+// @description    REST API for the React Go Quick Starter template.
+// @description    Authentication uses dual JWT tokens (access + refresh) with Redis-backed blacklist.
+// @license.name   MIT
+// @host           localhost:7777
+// @BasePath       /api/v1
+// @schemes        http https
+// @securityDefinitions.apikey BearerAuth
+// @in             header
+// @name           Authorization
+// @description    Bearer access token issued by /auth/login or /auth/register
 package main
 
 import (
@@ -11,6 +23,7 @@ import (
 	"syscall"
 	"time"
 
+	"github.com/prometheus/client_golang/prometheus/promhttp"
 	"github.com/react-go-quick-starter/server/internal/config"
 	"github.com/react-go-quick-starter/server/internal/repository"
 	"github.com/react-go-quick-starter/server/internal/server"
@@ -34,7 +47,7 @@ func main() {
 
 	// Set up structured logging
 	var logHandler slog.Handler
-	if cfg.Env == "production" {
+	if cfg.IsProduction() {
 		logHandler = slog.NewJSONHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelWarn})
 	} else {
 		logHandler = slog.NewTextHandler(os.Stdout, &slog.HandlerOptions{Level: slog.LevelDebug})
@@ -49,15 +62,18 @@ func main() {
 	)
 
 	// Dev fallback: auto-generate a secret so the server starts without config.
-	// NEVER use this in production.
-	if cfg.JWTSecret == "" {
-		if cfg.Env == "production" {
-			slog.Error("JWT_SECRET environment variable is required in production")
-			os.Exit(1)
-		}
+	// Production validation below will reject this default.
+	if cfg.JWTSecret == "" && cfg.IsDevelopment() {
 		cfg.JWTSecret = "dev-secret-change-me-in-production-32ch"
 		slog.Warn("JWT_SECRET not set — using insecure dev default")
 	}
+
+	// Fail-fast on misconfiguration (especially production-mode invariants).
+	if err := cfg.Validate(); err != nil {
+		slog.Error("config validation failed", "error", err)
+		os.Exit(1)
+	}
+	slog.Debug("config loaded", "config", cfg.String())
 
 	// Connect to PostgreSQL (optional — server starts in degraded mode if unavailable)
 	db, err := database.NewPostgres(cfg.PostgresURL)
@@ -82,12 +98,32 @@ func main() {
 
 	// Wire up dependencies
 	userRepo := repository.NewUserRepository(db)
+	roleRepo := repository.NewRoleRepository(db)
 	cacheRepo := repository.NewCacheRepository(rdb)
-	authSvc := service.NewAuthService(userRepo, cacheRepo, cfg)
+	authSvc := service.NewAuthService(userRepo, cacheRepo, cfg).WithRoleRepository(roleRepo)
 
 	// Create Echo instance and register routes
 	e := server.New(cfg, cacheRepo)
 	server.RegisterRoutes(e, cfg, authSvc, cacheRepo)
+
+	// Prometheus /metrics on a separate listener so it isn't internet-facing
+	// when the app is bound to 0.0.0.0. Skip when MetricsBind is empty.
+	var metricsSrv *http.Server
+	if cfg.MetricsBind != "" {
+		mux := http.NewServeMux()
+		mux.Handle("/metrics", promhttp.Handler())
+		metricsSrv = &http.Server{
+			Addr:              cfg.MetricsBind,
+			Handler:           mux,
+			ReadHeaderTimeout: 5 * time.Second,
+		}
+		go func() {
+			slog.Info("metrics listening", "addr", cfg.MetricsBind)
+			if err := metricsSrv.ListenAndServe(); err != nil && err != http.ErrServerClosed {
+				slog.Warn("metrics server stopped", "error", err)
+			}
+		}()
+	}
 
 	// Graceful shutdown on SIGINT / SIGTERM
 	quit := make(chan os.Signal, 1)
@@ -100,6 +136,9 @@ func main() {
 		defer cancel()
 		if err := e.Shutdown(ctx); err != nil {
 			slog.Error("server shutdown error", "error", err)
+		}
+		if metricsSrv != nil {
+			_ = metricsSrv.Shutdown(ctx)
 		}
 		if db != nil {
 			db.Close()

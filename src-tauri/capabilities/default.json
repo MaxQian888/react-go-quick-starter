@@ -2,14 +2,17 @@
   "$schema": "../gen/schemas/desktop-schema.json",
   "identifier": "default",
   "description": "enables the default permissions",
-  "windows": [
-    "main"
-  ],
+  "windows": ["main"],
   "permissions": [
     "core:default",
     {
       "identifier": "shell:allow-execute",
       "allow": [{ "name": "server", "sidecar": true }]
-    }
+    },
+    "os:default",
+    "dialog:default",
+    "notification:default",
+    "fs:default",
+    "store:default"
   ]
 }

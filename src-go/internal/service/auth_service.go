@@ -5,6 +5,8 @@ import (
 	"context"
 	"errors"
 	"fmt"
+	"log/slog"
+	"slices"
 	"time"
 
 	"github.com/golang-jwt/jwt/v5"
@@ -31,22 +33,51 @@ type CacheRepository interface {
 	IsBlacklisted(ctx context.Context, jti string) (bool, error)
 }
 
-// Claims holds custom JWT claims for access and refresh tokens.
+// RoleRepository abstracts the role/permission lookups the service needs.
+// Optional: when nil, JWT claims are issued without role data (legacy mode).
+type RoleRepository interface {
+	AssignRoleByName(ctx context.Context, userID uuid.UUID, roleName string) error
+	ListRolesForUser(ctx context.Context, userID uuid.UUID) ([]string, error)
+	ListPermissionsForUser(ctx context.Context, userID uuid.UUID) ([]string, error)
+}
+
+// Claims holds custom JWT claims for access and refresh tokens. Roles and
+// permissions are embedded so middleware can authorize without a DB roundtrip.
 type Claims struct {
-	UserID string `json:"sub"`
-	Email  string `json:"email"`
-	JTI    string `json:"jti"`
+	UserID      string   `json:"sub"`
+	Email       string   `json:"email"`
+	JTI         string   `json:"jti"`
+	Roles       []string `json:"roles,omitempty"`
+	Permissions []string `json:"perms,omitempty"`
 	jwt.RegisteredClaims
+}
+
+// HasRole reports whether the claims include the given role name.
+func (c *Claims) HasRole(name string) bool {
+	return slices.Contains(c.Roles, name)
+}
+
+// HasPermission reports whether the claims include the given permission.
+func (c *Claims) HasPermission(name string) bool {
+	return slices.Contains(c.Permissions, name)
 }
 
 type AuthService struct {
 	userRepo  UserRepository
 	cacheRepo CacheRepository
+	roleRepo  RoleRepository // optional
 	cfg       *config.Config
 }
 
 func NewAuthService(userRepo UserRepository, cacheRepo CacheRepository, cfg *config.Config) *AuthService {
 	return &AuthService{userRepo: userRepo, cacheRepo: cacheRepo, cfg: cfg}
+}
+
+// WithRoleRepository attaches an RBAC backend so issued tokens carry role and
+// permission claims. Pass nil at boot when the migration hasn't run yet.
+func (s *AuthService) WithRoleRepository(roleRepo RoleRepository) *AuthService {
+	s.roleRepo = roleRepo
+	return s
 }
 
 // Register creates a new user and returns auth tokens.
@@ -75,6 +106,15 @@ func (s *AuthService) Register(ctx context.Context, req *model.RegisterRequest) 
 
 	if err := s.userRepo.Create(ctx, user); err != nil {
 		return nil, fmt.Errorf("create user: %w", err)
+	}
+
+	// Assign the default "user" role so freshly registered accounts carry
+	// at least the read-only permissions. Failure here is non-fatal: the
+	// account exists, login still works, an admin can fix it later.
+	if s.roleRepo != nil {
+		if err := s.roleRepo.AssignRoleByName(ctx, user.ID, model.RoleUser); err != nil {
+			slog.Warn("rbac: assign default role failed", "user", user.ID, "error", err)
+		}
 	}
 
 	return s.issueTokens(ctx, user)
@@ -149,12 +189,31 @@ func (s *AuthService) issueTokens(ctx context.Context, user *model.User) (*model
 	now := time.Now()
 	userID := user.ID.String()
 
+	// Best-effort RBAC enrichment. A failure here doesn't block login — we
+	// just issue a token with empty role/perm arrays and log it.
+	var roles, perms []string
+	if s.roleRepo != nil {
+		var err error
+		roles, err = s.roleRepo.ListRolesForUser(ctx, user.ID)
+		if err != nil {
+			slog.Warn("rbac: list roles failed, issuing token without roles", "user", userID, "error", err)
+			roles = nil
+		}
+		perms, err = s.roleRepo.ListPermissionsForUser(ctx, user.ID)
+		if err != nil {
+			slog.Warn("rbac: list perms failed", "user", userID, "error", err)
+			perms = nil
+		}
+	}
+
 	// Access token
 	accessJTI := uuid.New().String()
 	accessClaims := &Claims{
-		UserID: userID,
-		Email:  user.Email,
-		JTI:    accessJTI,
+		UserID:      userID,
+		Email:       user.Email,
+		JTI:         accessJTI,
+		Roles:       roles,
+		Permissions: perms,
 		RegisteredClaims: jwt.RegisteredClaims{
 			ExpiresAt: jwt.NewNumericDate(now.Add(s.cfg.JWTAccessTTL)),
 			IssuedAt:  jwt.NewNumericDate(now),
@@ -166,7 +225,9 @@ func (s *AuthService) issueTokens(ctx context.Context, user *model.User) (*model
 		return nil, fmt.Errorf("sign access token: %w", err)
 	}
 
-	// Refresh token (also a JWT for self-contained validation)
+	// Refresh token (also a JWT for self-contained validation). Refresh tokens
+	// intentionally omit roles/perms — they are re-fetched on each refresh so
+	// privilege changes propagate within one access-token lifetime.
 	refreshJTI := uuid.New().String()
 	refreshClaims := &Claims{
 		UserID: userID,

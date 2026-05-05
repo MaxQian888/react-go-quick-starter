@@ -133,30 +133,30 @@ pnpm tauri dev           # 启动 Tauri 桌面应用
 
 ### 前端脚本
 
-| 命令 | 描述 |
-| --- | --- |
-| `pnpm dev` | 在 3000 端口启动 Next.js 开发服务器 |
-| `pnpm build` | 构建生产环境的 Next.js 应用（输出到 `out/`） |
-| `pnpm start` | 启动 Next.js 生产服务器 |
-| `pnpm lint` | 运行 ESLint |
-| `pnpm test` | 运行 Jest 测试 |
-| `pnpm test:watch` | 以监听模式运行测试 |
-| `pnpm test:coverage` | 运行测试并生成覆盖率报告 |
+| 命令                 | 描述                                         |
+| -------------------- | -------------------------------------------- |
+| `pnpm dev`           | 在 3000 端口启动 Next.js 开发服务器          |
+| `pnpm build`         | 构建生产环境的 Next.js 应用（输出到 `out/`） |
+| `pnpm start`         | 启动 Next.js 生产服务器                      |
+| `pnpm lint`          | 运行 ESLint                                  |
+| `pnpm test`          | 运行 Jest 测试                               |
+| `pnpm test:watch`    | 以监听模式运行测试                           |
+| `pnpm test:coverage` | 运行测试并生成覆盖率报告                     |
 
 ### 后端脚本
 
-| 命令 | 描述 |
-| --- | --- |
-| `pnpm build:backend` | 为所有平台交叉编译 Go sidecar |
+| 命令                     | 描述                                |
+| ------------------------ | ----------------------------------- |
+| `pnpm build:backend`     | 为所有平台交叉编译 Go sidecar       |
 | `pnpm build:backend:dev` | 仅为当前平台编译 Go sidecar（快速） |
 
 ### Tauri（桌面）脚本
 
-| 命令 | 描述 |
-| --- | --- |
-| `pnpm tauri:dev` | 编译 Go sidecar + 启动 Tauri 开发模式 |
+| 命令               | 描述                                        |
+| ------------------ | ------------------------------------------- |
+| `pnpm tauri:dev`   | 编译 Go sidecar + 启动 Tauri 开发模式       |
 | `pnpm tauri:build` | 完整生产构建（Go + Next.js + Tauri 安装包） |
-| `pnpm tauri info` | 显示 Tauri 环境信息 |
+| `pnpm tauri info`  | 显示 Tauri 环境信息                         |
 
 ### 添加 UI 组件（shadcn/ui）
 
@@ -219,16 +219,16 @@ react-go-quick-starter/
 
 Go 后端在 `http://localhost:7777` 暴露以下接口：
 
-| 方法 | 路径 | 鉴权 | 描述 |
-| --- | --- | --- | --- |
-| `GET` | `/health` | — | 健康检查（含版本信息） |
-| `GET` | `/api/v1/health` | — | 版本化健康检查 |
-| `POST` | `/api/v1/auth/register` | — | 注册新用户 |
-| `POST` | `/api/v1/auth/login` | — | 登录，返回 JWT 令牌 |
-| `POST` | `/api/v1/auth/refresh` | — | 刷新访问令牌 |
-| `POST` | `/api/v1/auth/logout` | JWT | 登出并撤销令牌 |
-| `GET` | `/api/v1/users/me` | JWT | 获取当前用户信息 |
-| `GET` | `/ws` | — | WebSocket 连接 |
+| 方法   | 路径                    | 鉴权 | 描述                   |
+| ------ | ----------------------- | ---- | ---------------------- |
+| `GET`  | `/health`               | —    | 健康检查（含版本信息） |
+| `GET`  | `/api/v1/health`        | —    | 版本化健康检查         |
+| `POST` | `/api/v1/auth/register` | —    | 注册新用户             |
+| `POST` | `/api/v1/auth/login`    | —    | 登录，返回 JWT 令牌    |
+| `POST` | `/api/v1/auth/refresh`  | —    | 刷新访问令牌           |
+| `POST` | `/api/v1/auth/logout`   | JWT  | 登出并撤销令牌         |
+| `GET`  | `/api/v1/users/me`      | JWT  | 获取当前用户信息       |
+| `GET`  | `/ws`                   | —    | WebSocket 连接         |
 
 ## 配置
 
@@ -280,8 +280,8 @@ NEXT_PUBLIC_APP_NAME=React Go Quick Starter
 在 `components.json` 和 `tsconfig.json` 中配置：
 
 ```typescript
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 ```
 
 可用别名：`@/components`、`@/lib`、`@/ui`、`@/hooks`、`@/utils`
@@ -359,11 +359,11 @@ docker compose up   # 包含 postgres + redis
 
 ### 桌面部署
 
-| 平台 | 制品 | 位置 |
-| --- | --- | --- |
-| Windows | `.msi` 安装包 | `src-tauri/target/release/bundle/msi/` |
-| macOS | `.dmg` 文件 | `src-tauri/target/release/bundle/dmg/` |
-| Linux | `.AppImage` | `src-tauri/target/release/bundle/appimage/` |
+| 平台    | 制品          | 位置                                        |
+| ------- | ------------- | ------------------------------------------- |
+| Windows | `.msi` 安装包 | `src-tauri/target/release/bundle/msi/`      |
+| macOS   | `.dmg` 文件   | `src-tauri/target/release/bundle/dmg/`      |
+| Linux   | `.AppImage`   | `src-tauri/target/release/bundle/appimage/` |
 
 ## 故障排除
 

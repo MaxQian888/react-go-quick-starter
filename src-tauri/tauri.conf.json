@@ -34,10 +34,21 @@
       "icons/icon.ico"
     ],
     "externalBin": ["binaries/server"],
+    "createUpdaterArtifacts": false,
     "windows": {
       "certificateThumbprint": null,
       "digestAlgorithm": "sha256",
       "timestampUrl": ""
+    }
+  },
+  "plugins": {
+    "updater": {
+      "active": false,
+      "endpoints": [
+        "https://github.com/MaxQian/react-go-quick-starter/releases/latest/download/latest.json"
+      ],
+      "pubkey": "REPLACE_WITH_PUBKEY_FROM_TAURI_SIGNER_GENERATE",
+      "dialog": true
     }
   }
 }

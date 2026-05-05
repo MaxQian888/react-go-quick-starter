@@ -9,10 +9,7 @@ const setLocale = jest.fn((locale: "en" | "zh") => {
 
 jest.mock("@/stores/locale-store", () => ({
   useLocaleStore: <T,>(
-    selector: (state: {
-      locale: "en" | "zh";
-      setLocale: (l: "en" | "zh") => void;
-    }) => T,
+    selector: (state: { locale: "en" | "zh"; setLocale: (l: "en" | "zh") => void }) => T,
   ) => selector({ locale: mockLocale, setLocale }),
 }));
 
@@ -26,13 +23,8 @@ describe("LocaleSwitcher", () => {
     render(<LocaleSwitcher />);
 
     expect(screen.getByLabelText("Language")).toBeInTheDocument();
-    expect(screen.getByRole("button", { name: "English" })).toHaveAttribute(
-      "aria-current",
-      "true",
-    );
-    expect(screen.getByRole("button", { name: "中文" })).not.toHaveAttribute(
-      "aria-current",
-    );
+    expect(screen.getByRole("button", { name: "English" })).toHaveAttribute("aria-current", "true");
+    expect(screen.getByRole("button", { name: "中文" })).not.toHaveAttribute("aria-current");
   });
 
   it("invokes setLocale when a locale button is clicked", () => {

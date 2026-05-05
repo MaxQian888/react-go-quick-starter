@@ -35,6 +35,11 @@ func RegisterRoutes(e *echo.Echo, cfg *config.Config, authSvc *service.AuthServi
 	users := v1.Group("/users", jwtMw)
 	users.GET("/me", authH.GetMe)
 
+	// Admin routes — gated by the "admin:access" permission so only roles
+	// that explicitly carry it (seeded into "admin") can reach them.
+	admin := v1.Group("/admin", jwtMw, appMiddleware.RequirePermission("admin:access"))
+	admin.GET("/whoami", authH.GetMe) // placeholder; swap in real admin handlers later
+
 	// WebSocket
 	wsH := handler.NewWSHandler(cfg.JWTSecret)
 	e.GET("/ws", wsH.HandleWS)

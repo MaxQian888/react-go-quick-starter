@@ -58,6 +58,9 @@ jobs:
       - name: Install dependencies
         run: pnpm install --frozen-lockfile
 
+      - name: Verify version consistency (package.json / tauri / Cargo)
+        run: node scripts/check-versions.js
+
       - name: Run ESLint
         run: pnpm lint
         continue-on-error: true
@@ -65,7 +68,12 @@ jobs:
       - name: TypeScript type checking
         run: pnpm exec tsc --noEmit
 
-      - name: Security audit
+      # Production-only security audit. High-severity vulns block the build;
+      # moderate ones are surfaced separately so they don't gate every PR.
+      - name: Security audit (high+, blocking)
+        run: pnpm audit --prod --audit-level=high
+
+      - name: Security audit (moderate, non-blocking)
         run: pnpm audit --audit-level=moderate
         continue-on-error: true
 

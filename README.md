@@ -133,30 +133,30 @@ pnpm tauri dev           # Launch Tauri desktop app
 
 ### Frontend Scripts
 
-| Command | Description |
-| --- | --- |
-| `pnpm dev` | Start Next.js dev server on port 3000 |
-| `pnpm build` | Build Next.js app for production (outputs to `out/`) |
-| `pnpm start` | Start Next.js production server |
-| `pnpm lint` | Run ESLint |
-| `pnpm test` | Run Jest tests |
-| `pnpm test:watch` | Run tests in watch mode |
-| `pnpm test:coverage` | Run tests with coverage report |
+| Command              | Description                                          |
+| -------------------- | ---------------------------------------------------- |
+| `pnpm dev`           | Start Next.js dev server on port 3000                |
+| `pnpm build`         | Build Next.js app for production (outputs to `out/`) |
+| `pnpm start`         | Start Next.js production server                      |
+| `pnpm lint`          | Run ESLint                                           |
+| `pnpm test`          | Run Jest tests                                       |
+| `pnpm test:watch`    | Run tests in watch mode                              |
+| `pnpm test:coverage` | Run tests with coverage report                       |
 
 ### Backend Scripts
 
-| Command | Description |
-| --- | --- |
-| `pnpm build:backend` | Cross-compile Go sidecar for all platforms |
+| Command                  | Description                                         |
+| ------------------------ | --------------------------------------------------- |
+| `pnpm build:backend`     | Cross-compile Go sidecar for all platforms          |
 | `pnpm build:backend:dev` | Compile Go sidecar for current platform only (fast) |
 
 ### Tauri (Desktop) Scripts
 
-| Command | Description |
-| --- | --- |
-| `pnpm tauri:dev` | Compile Go sidecar + start Tauri dev mode |
+| Command            | Description                                            |
+| ------------------ | ------------------------------------------------------ |
+| `pnpm tauri:dev`   | Compile Go sidecar + start Tauri dev mode              |
 | `pnpm tauri:build` | Full production build (Go + Next.js + Tauri installer) |
-| `pnpm tauri info` | Display Tauri environment information |
+| `pnpm tauri info`  | Display Tauri environment information                  |
 
 ### Adding UI Components (shadcn/ui)
 
@@ -219,16 +219,16 @@ react-go-quick-starter/
 
 The Go backend exposes the following endpoints at `http://localhost:7777`:
 
-| Method | Path | Auth | Description |
-| --- | --- | --- | --- |
-| `GET` | `/health` | — | Health check with version info |
-| `GET` | `/api/v1/health` | — | Versioned health check |
-| `POST` | `/api/v1/auth/register` | — | Register new user |
-| `POST` | `/api/v1/auth/login` | — | Login, returns JWT tokens |
-| `POST` | `/api/v1/auth/refresh` | — | Refresh access token |
-| `POST` | `/api/v1/auth/logout` | JWT | Logout and revoke token |
-| `GET` | `/api/v1/users/me` | JWT | Get current user profile |
-| `GET` | `/ws` | — | WebSocket connection |
+| Method | Path                    | Auth | Description                    |
+| ------ | ----------------------- | ---- | ------------------------------ |
+| `GET`  | `/health`               | —    | Health check with version info |
+| `GET`  | `/api/v1/health`        | —    | Versioned health check         |
+| `POST` | `/api/v1/auth/register` | —    | Register new user              |
+| `POST` | `/api/v1/auth/login`    | —    | Login, returns JWT tokens      |
+| `POST` | `/api/v1/auth/refresh`  | —    | Refresh access token           |
+| `POST` | `/api/v1/auth/logout`   | JWT  | Logout and revoke token        |
+| `GET`  | `/api/v1/users/me`      | JWT  | Get current user profile       |
+| `GET`  | `/ws`                   | —    | WebSocket connection           |
 
 ## Configuration
 
@@ -280,8 +280,8 @@ Edit `src-tauri/tauri.conf.json` to customize your desktop app:
 Configured in `components.json` and `tsconfig.json`:
 
 ```typescript
-import { Button } from "@/components/ui/button"
-import { cn } from "@/lib/utils"
+import { Button } from "@/components/ui/button";
+import { cn } from "@/lib/utils";
 ```
 
 Available aliases: `@/components`, `@/lib`, `@/ui`, `@/hooks`, `@/utils`
@@ -359,11 +359,11 @@ docker compose up   # includes postgres + redis
 
 ### Desktop Deployment
 
-| Platform | Artifact | Location |
-| --- | --- | --- |
-| Windows | `.msi` installer | `src-tauri/target/release/bundle/msi/` |
-| macOS | `.dmg` file | `src-tauri/target/release/bundle/dmg/` |
-| Linux | `.AppImage` | `src-tauri/target/release/bundle/appimage/` |
+| Platform | Artifact         | Location                                    |
+| -------- | ---------------- | ------------------------------------------- |
+| Windows  | `.msi` installer | `src-tauri/target/release/bundle/msi/`      |
+| macOS    | `.dmg` file      | `src-tauri/target/release/bundle/dmg/`      |
+| Linux    | `.AppImage`      | `src-tauri/target/release/bundle/appimage/` |
 
 ## Troubleshooting
 

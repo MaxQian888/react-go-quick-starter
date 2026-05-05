@@ -24,3 +24,20 @@ log = "0.4"
 tauri = { version = "2.9.0", features = [] }
 tauri-plugin-log = "2"
 tauri-plugin-shell = "2"
+# Native capabilities surfaced to the frontend. Each plugin requires the
+# matching permissions block in capabilities/default.json before its IPC
+# commands are reachable.
+tauri-plugin-os = "2"
+tauri-plugin-dialog = "2"
+tauri-plugin-notification = "2"
+tauri-plugin-fs = "2"
+tauri-plugin-store = "2"
+
+# Auto-update: kept out of the default build so a fresh clone can run
+# `pnpm tauri:build` without first generating a signing key. Activate via
+# `--features updater` once you have a pubkey configured (see docs/RELEASE.md).
+tauri-plugin-updater = { version = "2", optional = true }
+
+[features]
+default = []
+updater = ["dep:tauri-plugin-updater"]
