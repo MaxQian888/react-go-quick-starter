@@ -1,0 +1,21 @@
+{
+  "Metadata": {
+    "title": "Create Next App",
+    "description": "由 create next app 生成"
+  },
+  "HomePage": {
+    "heading": "开始动手吧，编辑 page.tsx 文件。",
+    "intro": "想要更多起点或指引？前往 <templates>模板库</templates> 或 <learning>学习中心</learning>。",
+    "deploy": "立即部署",
+    "documentation": "查看文档",
+    "logoAlt": "Next.js 徽标",
+    "vercelLogoAlt": "Vercel 徽标"
+  },
+  "LocaleSwitcher": {
+    "label": "语言",
+    "name": {
+      "en": "English",
+      "zh": "中文"
+    }
+  }
+}

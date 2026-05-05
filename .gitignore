@@ -53,6 +53,11 @@ next-env.d.ts
 .windsurfrules
 .ace-tool/
 
+# Claude Code skills surface — junctions/symlinks to .agents/skills/.
+# The canonical source is .agents/skills/ (tracked); .claude/skills/ is
+# regenerated locally by `npx skills experimental_install` plus local re-link.
+.claude/skills/
+
 # Go backend binaries (compiled artifacts)
 src-tauri/binaries/server*
 !src-tauri/binaries/.gitkeep

@@ -81,7 +81,7 @@ cp src-go/.env.example src-go/.env  # only needed for direct go run
 ### Frontend Structure
 
 - `app/` - Next.js App Router (layout.tsx, page.tsx, globals.css)
-- `components/ui/` - shadcn/ui components (Radix UI + class-variance-authority)
+- `components/ui/` - shadcn/ui components (Radix UI + class-variance-authority). **Do not place test files (`*.test.tsx`, `*.spec.tsx`) here** — these files are vendored from the shadcn registry and may be overwritten by `pnpm dlx shadcn@latest add`. Put component tests in `__tests__/` or co-located outside `components/ui/`.
 - `lib/utils.ts` - `cn()` utility (clsx + tailwind-merge)
 - `__tests__/` - Jest tests with React Testing Library
 
@@ -129,6 +129,7 @@ Layered architecture: handler → service → repository → database
 ### Frontend (Jest + React Testing Library)
 
 - Test files: `**/__tests__/**`, `**/*.test.tsx`, `**/*.spec.tsx`
+- **Never place tests inside `components/ui/`** — those files are managed by the shadcn CLI and `pnpm dlx shadcn@latest add` will overwrite them. Put tests in `__tests__/` or alongside non-vendored components.
 - CSS and image imports are mocked automatically
 - Coverage thresholds: 60% branches/functions, 70% lines/statements
 - JUnit XML output written to `test-results/` for CI

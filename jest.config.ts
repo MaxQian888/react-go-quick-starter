@@ -234,11 +234,9 @@ const config: Config = {
   // A map from regular expressions to paths to transformers
   // transform: undefined,
 
-  // An array of regexp pattern strings that are matched against all source file paths, matched files will skip transformation
-  // transformIgnorePatterns: [
-  //   "\\\\node_modules\\\\",
-  //   "\\.pnp\\.[^\\\\]+$"
-  // ],
+  // ESM-only packages (next-intl, use-intl) are listed under `transpilePackages`
+  // in next.config.ts, which next/jest reads to allow them through its default
+  // node_modules ignore. No manual override is needed here.
 
   // An array of regexp pattern strings that are matched against all modules before the module loader will automatically return a mock for them
   // unmockedModulePathPatterns: undefined,
