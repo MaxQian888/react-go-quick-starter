@@ -105,7 +105,7 @@
     "lint-staged": "^16.4.0",
     "prettier": "^3.8.3",
     "prettier-plugin-tailwindcss": "^0.8.0",
-    "shadcn": "^4.5.0",
+    "shadcn": "^4.7.0",
     "tailwindcss": "^4.2.4",
     "ts-jest": "^29.4.9",
     "ts-node": "^10.9.2",
